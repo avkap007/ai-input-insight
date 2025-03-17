@@ -11,12 +11,14 @@ interface DocumentUploadProps {
   onDocumentUpload: (document: Document) => void;
   documents: Document[];
   onRemoveDocument: (id: string) => void;
+  onUpdateDocumentInfluence: (id: string, influenceScore: number) => void;
 }
 
 const DocumentUpload: React.FC<DocumentUploadProps> = ({ 
   onDocumentUpload, 
   documents,
-  onRemoveDocument
+  onRemoveDocument,
+  onUpdateDocumentInfluence
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -41,7 +43,8 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
           
           <DocumentsList 
             documents={documents} 
-            onRemoveDocument={onRemoveDocument} 
+            onRemoveDocument={onRemoveDocument}
+            onUpdateInfluence={onUpdateDocumentInfluence}
           />
         </>
       )}

@@ -79,41 +79,58 @@ function generateMockResponse(query: string, documents: Document[]): ResponsePay
     };
   }
   
-  // Extract content from documents to create a response
-  let content = `Based on the documents you've provided, I can tell you that `;
+  // Calculate the total influence scores
+  const totalInfluence = documents.reduce((sum, doc) => sum + (doc.influenceScore || 0.5), 0);
   
-  // Add snippets from documents
-  documents.forEach((doc, index) => {
-    const snippet = doc.content.substring(0, Math.min(100, doc.content.length)).trim();
+  // Normalize influence scores
+  const normalizedDocuments = documents.map(doc => ({
+    ...doc,
+    normalizedInfluence: totalInfluence > 0 
+      ? (doc.influenceScore || 0.5) / totalInfluence 
+      : 1 / documents.length
+  }));
+  
+  // Sort documents by normalized influence (highest first)
+  normalizedDocuments.sort((a, b) => b.normalizedInfluence - a.normalizedInfluence);
+  
+  // Generate response content weighted by document influence
+  let content = `Based on the documents you've provided, with their varying levels of influence, I can tell you that `;
+  
+  // Add snippets from documents, weighted by influence
+  normalizedDocuments.forEach((doc, index) => {
+    // Length of snippet is proportional to document influence
+    const snippetLength = Math.max(30, Math.round(doc.normalizedInfluence * 200));
+    const snippet = doc.content.substring(0, Math.min(snippetLength, doc.content.length)).trim();
     content += snippet;
-    if (index < documents.length - 1) {
+    if (index < normalizedDocuments.length - 1) {
       content += ". Furthermore, ";
     }
   });
   
-  content += "\n\nThis response is influenced by both your uploaded documents and my base knowledge.";
+  content += "\n\nThis response is influenced by your uploaded documents based on the influence levels you've set.";
   
-  // Create mock token attributions
+  // Create token attributions
   const attributions: TokenAttribution[] = [];
   
-  // Add "Based on the documents you've provided, I can tell you that" as base knowledge
+  // Add initial text as base knowledge
   attributions.push({
-    text: "Based on the documents you've provided, I can tell you that ",
+    text: "Based on the documents you've provided, with their varying levels of influence, I can tell you that ",
     source: 'base',
     confidence: 0.9
   });
   
-  // Add document snippets with attributions
-  documents.forEach((doc, index) => {
-    const snippet = doc.content.substring(0, Math.min(100, doc.content.length)).trim();
+  // Add document snippets with attributions, weighted by influence
+  normalizedDocuments.forEach((doc, index) => {
+    const snippetLength = Math.max(30, Math.round(doc.normalizedInfluence * 200));
+    const snippet = doc.content.substring(0, Math.min(snippetLength, doc.content.length)).trim();
     attributions.push({
       text: snippet,
       source: 'document',
       documentId: doc.id,
-      confidence: 0.85
+      confidence: 0.7 + (doc.normalizedInfluence * 0.3) // Higher influence = higher confidence
     });
     
-    if (index < documents.length - 1) {
+    if (index < normalizedDocuments.length - 1) {
       attributions.push({
         text: ". Furthermore, ",
         source: 'base',
@@ -124,22 +141,21 @@ function generateMockResponse(query: string, documents: Document[]): ResponsePay
   
   // Add final sentence as base knowledge
   attributions.push({
-    text: "\n\nThis response is influenced by both your uploaded documents and my base knowledge.",
+    text: "\n\nThis response is influenced by your uploaded documents based on the influence levels you've set.",
     source: 'base',
     confidence: 0.95
   });
   
-  // Create mock attribution data
-  const totalDocs = documents.length;
-  const basePercentage = 65;
-  const docContribution = (100 - basePercentage) / totalDocs;
+  // Base knowledge percentage (inverse of total normalized influence)
+  const basePercentage = 40; // Fixed base percentage
   
+  // Create attribution data with document contributions based on influence
   const attributionData: AttributionData = {
     baseKnowledge: basePercentage,
-    documents: documents.map(doc => ({
+    documents: normalizedDocuments.map(doc => ({
       id: doc.id,
       name: doc.name,
-      contribution: docContribution
+      contribution: Math.round((100 - basePercentage) * doc.normalizedInfluence)
     }))
   };
   

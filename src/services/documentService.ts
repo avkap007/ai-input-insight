@@ -71,3 +71,16 @@ export const deleteDocument = async (id: string): Promise<void> => {
     throw error;
   }
 };
+
+// Update document influence score
+export const updateDocumentInfluence = async (id: string, influenceScore: number): Promise<void> => {
+  const { error } = await supabase
+    .from('documents')
+    .update({ influence_score: influenceScore })
+    .eq('id', id);
+  
+  if (error) {
+    console.error("Error updating document influence:", error);
+    throw error;
+  }
+};

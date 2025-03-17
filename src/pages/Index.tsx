@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import DocumentUpload from '@/components/DocumentUpload';
@@ -6,7 +5,7 @@ import ChatInterface from '@/components/ChatInterface';
 import { Document, Message, TokenAttribution, AttributionData } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { getDocuments, saveDocument, deleteDocument } from '@/services/documentService';
+import { getDocuments, saveDocument, deleteDocument, updateDocumentInfluence } from '@/services/documentService';
 import { createChatSession, getMessages, saveMessage } from '@/services/chatService';
 
 const Index = () => {
@@ -15,15 +14,12 @@ const Index = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [chatSessionId, setChatSessionId] = useState<string | null>(null);
 
-  // Initialize chat session and load documents
   useEffect(() => {
     const initializeChat = async () => {
       try {
-        // Create a new chat session
         const sessionId = await createChatSession();
         setChatSessionId(sessionId);
         
-        // Load documents
         const docs = await getDocuments();
         setDocuments(docs);
       } catch (error) {
@@ -71,6 +67,26 @@ const Index = () => {
     }
   };
 
+  const handleUpdateDocumentInfluence = async (id: string, influenceScore: number) => {
+    try {
+      await updateDocumentInfluence(id, influenceScore);
+      setDocuments(prev => prev.map(doc => 
+        doc.id === id ? { ...doc, influenceScore } : doc
+      ));
+      toast({
+        title: "Influence updated",
+        description: `Document influence set to ${Math.round(influenceScore * 100)}%`,
+      });
+    } catch (error) {
+      console.error("Error updating document influence:", error);
+      toast({
+        title: "Update failed",
+        description: "There was an error updating document influence.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSendMessage = async (content: string) => {
     if (!chatSessionId) {
       toast({
@@ -81,7 +97,6 @@ const Index = () => {
       return;
     }
     
-    // Add user message
     const userMessage: Omit<Message, 'id'> = {
       role: 'user',
       content,
@@ -89,12 +104,10 @@ const Index = () => {
     };
     
     try {
-      // Save user message to database
       const savedUserMessage = await saveMessage(chatSessionId, userMessage);
       setMessages(prev => [...prev, savedUserMessage]);
       setIsProcessing(true);
       
-      // Call the edge function to generate a response
       const response = await supabase.functions.invoke('generate-response', {
         body: { query: content, documents },
       });
@@ -105,17 +118,14 @@ const Index = () => {
       
       const { data } = response;
       
-      // Create assistant message
       const assistantMessage: Omit<Message, 'id'> = {
         role: 'assistant',
         content: data.content,
         timestamp: new Date(),
       };
       
-      // Save assistant message to database
       const savedAssistantMessage = await saveMessage(chatSessionId, assistantMessage);
       
-      // Associate the attributions and attribution data with the message
       savedAssistantMessage.attributions = data.attributions;
       savedAssistantMessage.attributionData = data.attributionData;
       
@@ -142,6 +152,7 @@ const Index = () => {
             onDocumentUpload={handleDocumentUpload}
             documents={documents}
             onRemoveDocument={handleRemoveDocument}
+            onUpdateDocumentInfluence={handleUpdateDocumentInfluence}
           />
         </div>
         
