@@ -4,6 +4,7 @@ import { Upload, File, X, ChevronDown, ChevronUp, FileText } from 'lucide-react'
 import { Document } from '@/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
+import { v4 as uuidv4 } from 'uuid';
 
 interface DocumentUploadProps {
   onDocumentUpload: (document: Document) => void;
@@ -53,7 +54,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
       
       setTimeout(() => {
         const newDocument: Document = {
-          id: Date.now().toString(),
+          id: uuidv4(),
           name: file.name,
           type: file.name.endsWith('.pdf') ? 'pdf' : 'text',
           content: content,
@@ -105,7 +106,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
     const textContent = prompt("Enter your text or quote:");
     if (textContent) {
       const newDocument: Document = {
-        id: Date.now().toString(),
+        id: uuidv4(),
         name: `Quote ${documents.length + 1}`,
         type: 'quote',
         content: textContent,

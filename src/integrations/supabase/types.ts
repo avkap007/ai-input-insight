@@ -9,7 +9,163 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      attribution_data: {
+        Row: {
+          base_knowledge_percentage: number
+          created_at: string
+          document_contributions: Json
+          id: string
+          message_id: string
+        }
+        Insert: {
+          base_knowledge_percentage: number
+          created_at?: string
+          document_contributions: Json
+          id?: string
+          message_id: string
+        }
+        Update: {
+          base_knowledge_percentage?: number
+          created_at?: string
+          document_contributions?: Json
+          id?: string
+          message_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attribution_data_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          title: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string | null
+        }
+        Relationships: []
+      }
+      documents: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          influence_score: number | null
+          name: string
+          size: number | null
+          type: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          influence_score?: number | null
+          name: string
+          size?: number | null
+          type: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          influence_score?: number | null
+          name?: string
+          size?: number | null
+          type?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          chat_session_id: string
+          content: string
+          id: string
+          role: string
+          timestamp: string
+        }
+        Insert: {
+          chat_session_id: string
+          content: string
+          id?: string
+          role: string
+          timestamp?: string
+        }
+        Update: {
+          chat_session_id?: string
+          content?: string
+          id?: string
+          role?: string
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_chat_session_id_fkey"
+            columns: ["chat_session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      token_attributions: {
+        Row: {
+          confidence: number
+          created_at: string
+          document_id: string | null
+          id: string
+          message_id: string
+          source: string
+          text: string
+        }
+        Insert: {
+          confidence: number
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          message_id: string
+          source: string
+          text: string
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          message_id?: string
+          source?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "token_attributions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "token_attributions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

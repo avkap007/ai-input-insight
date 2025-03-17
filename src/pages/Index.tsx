@@ -1,69 +1,135 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import DocumentUpload from '@/components/DocumentUpload';
 import ChatInterface from '@/components/ChatInterface';
-import { Document, Message } from '@/types';
+import { Document, Message, TokenAttribution, AttributionData } from '@/types';
 import { toast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { getDocuments, saveDocument, deleteDocument } from '@/services/documentService';
+import { createChatSession, getMessages, saveMessage } from '@/services/chatService';
 
 const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [chatSessionId, setChatSessionId] = useState<string | null>(null);
 
-  const handleDocumentUpload = (document: Document) => {
-    setDocuments(prev => [...prev, document]);
+  // Initialize chat session and load documents
+  useEffect(() => {
+    const initializeChat = async () => {
+      try {
+        // Create a new chat session
+        const sessionId = await createChatSession();
+        setChatSessionId(sessionId);
+        
+        // Load documents
+        const docs = await getDocuments();
+        setDocuments(docs);
+      } catch (error) {
+        console.error("Error initializing chat:", error);
+        toast({
+          title: "Error",
+          description: "Failed to initialize the application. Please refresh the page.",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    initializeChat();
+  }, []);
+
+  const handleDocumentUpload = async (document: Document) => {
+    try {
+      const savedDocument = await saveDocument(document);
+      setDocuments(prev => [...prev, savedDocument]);
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      toast({
+        title: "Upload failed",
+        description: "There was an error saving your document.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleRemoveDocument = (id: string) => {
-    setDocuments(prev => prev.filter(doc => doc.id !== id));
-    toast({
-      title: "Document removed",
-      description: "The document has been removed from your sources.",
-    });
+  const handleRemoveDocument = async (id: string) => {
+    try {
+      await deleteDocument(id);
+      setDocuments(prev => prev.filter(doc => doc.id !== id));
+      toast({
+        title: "Document removed",
+        description: "The document has been removed from your sources.",
+      });
+    } catch (error) {
+      console.error("Error removing document:", error);
+      toast({
+        title: "Removal failed",
+        description: "There was an error removing the document.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = async (content: string) => {
+    if (!chatSessionId) {
+      toast({
+        title: "Error",
+        description: "Chat session not initialized. Please refresh the page.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Add user message
-    const userMessage: Message = {
-      id: Date.now().toString(),
+    const userMessage: Omit<Message, 'id'> = {
       role: 'user',
       content,
       timestamp: new Date(),
     };
     
-    setMessages(prev => [...prev, userMessage]);
-    setIsProcessing(true);
-    
-    // Simulate AI response after a delay
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
+    try {
+      // Save user message to database
+      const savedUserMessage = await saveMessage(chatSessionId, userMessage);
+      setMessages(prev => [...prev, savedUserMessage]);
+      setIsProcessing(true);
+      
+      // Call the edge function to generate a response
+      const response = await supabase.functions.invoke('generate-response', {
+        body: { query: content, documents },
+      });
+      
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+      
+      const { data } = response;
+      
+      // Create assistant message
+      const assistantMessage: Omit<Message, 'id'> = {
         role: 'assistant',
-        content: generateMockResponse(content, documents),
+        content: data.content,
         timestamp: new Date(),
       };
       
-      setMessages(prev => [...prev, assistantMessage]);
+      // Save assistant message to database
+      const savedAssistantMessage = await saveMessage(chatSessionId, assistantMessage);
+      
+      // Associate the attributions and attribution data with the message
+      savedAssistantMessage.attributions = data.attributions;
+      savedAssistantMessage.attributionData = data.attributionData;
+      
+      setMessages(prev => [...prev, savedAssistantMessage]);
+    } catch (error) {
+      console.error("Error processing message:", error);
+      toast({
+        title: "Error",
+        description: "Failed to process your message. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsProcessing(false);
-    }, 2000);
-  };
-  
-  // Mock response generator
-  const generateMockResponse = (query: string, docs: Document[]): string => {
-    if (docs.length === 0) {
-      return "I don't have any documents to reference. Please upload some documents so I can provide insights based on them.";
     }
-    
-    // Extract some content from the documents to make the response seem related
-    const docSamples = docs.map(doc => {
-      const snippet = doc.content.substring(0, 100).trim();
-      return snippet + (doc.content.length > 100 ? '...' : '');
-    });
-    
-    return `Based on the documents you've provided, I can tell you that ${docSamples[0]} Furthermore, ${docs.length > 1 ? docSamples[1] : 'there are additional insights to be found in your document.'}
-
-This response is influenced by both your uploaded documents and my base knowledge. The visualization above shows which parts came from where.`;
   };
 
   return (

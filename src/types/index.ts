@@ -4,6 +4,8 @@ export type Message = {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  attributions?: TokenAttribution[];
+  attributionData?: AttributionData;
 };
 
 export type Document = {

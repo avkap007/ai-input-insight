@@ -19,25 +19,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  // Mock attribution data for demo
-  const mockAttributions: TokenAttribution[] = [
-    { text: "Based on the documents provided, ", source: 'base', confidence: 0.92 },
-    { text: "OpenAI's GPT models ", source: 'document', documentId: "1", confidence: 0.85 },
-    { text: "utilize a technique called ", source: 'base', confidence: 0.78 },
-    { text: "Reinforcement Learning from Human Feedback (RLHF) ", source: 'document', documentId: "1", confidence: 0.95 },
-    { text: "to improve alignment with human values and reduce harmful outputs. ", source: 'base', confidence: 0.88 },
-    { text: "This involves training the model to predict the next token in a sequence, ", source: 'base', confidence: 0.91 },
-    { text: "then fine-tuning with human feedback. ", source: 'document', documentId: "2", confidence: 0.82 }
-  ];
-  
-  const mockAttributionData: AttributionData = {
-    baseKnowledge: 65.3,
-    documents: [
-      { id: "1", name: "OpenAI Research Paper", contribution: 24.7 },
-      { id: "2", name: "AI Ethics Guide", contribution: 10.0 }
-    ]
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,9 +80,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     <div className="space-y-4">
                       <InfluenceVisualization 
                         message={message.content} 
-                        attributions={mockAttributions} 
+                        attributions={message.attributions || []} 
                       />
-                      <AttributionChart data={mockAttributionData} />
+                      {message.attributionData && (
+                        <AttributionChart data={message.attributionData} />
+                      )}
                     </div>
                   )}
                 </div>
