@@ -27,55 +27,121 @@ const UploadArea: React.FC<UploadAreaProps> = ({ onDocumentUpload }) => {
   const processFile = (file: File) => {
     setUploadingProgress(0);
     
-    // Simulating file reading and processing
-    const reader = new FileReader();
-    
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      
-      // Simulate progress
-      const interval = setInterval(() => {
-        setUploadingProgress(prev => {
-          if (prev === null) return 0;
-          if (prev >= 100) {
-            clearInterval(interval);
-            return null;
-          }
-          return prev + 10;
-        });
-      }, 100);
-      
-      setTimeout(() => {
-        const newDocument: Document = {
-          id: uuidv4(),
-          name: file.name,
-          type: file.name.endsWith('.pdf') ? 'pdf' : 'text',
-          content: content,
-          size: file.size,
-          influenceScore: 0.5,
-        };
-        
-        onDocumentUpload(newDocument);
-        clearInterval(interval);
-        setUploadingProgress(null);
-        
-        toast({
-          title: "Document uploaded",
-          description: `${file.name} has been added to your sources.`,
-        });
-      }, 1000);
-    };
-    
-    reader.onerror = () => {
-      setUploadingProgress(null);
+    // Check file size (5MB limit)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > MAX_FILE_SIZE) {
       toast({
-        title: "Upload failed",
-        description: "There was an error processing your document.",
+        title: "File too large",
+        description: "Maximum file size is 5MB. Please upload a smaller file.",
         variant: "destructive",
       });
-    };
+      setUploadingProgress(null);
+      return;
+    }
     
-    reader.readAsText(file);
+    if (file.name.endsWith('.pdf')) {
+      // For PDF files, use array buffer and encode as base64
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        // Simulate progress
+        const interval = setInterval(() => {
+          setUploadingProgress(prev => {
+            if (prev === null) return 0;
+            if (prev >= 100) {
+              clearInterval(interval);
+              return null;
+            }
+            return prev + 10;
+          });
+        }, 100);
+        
+        // Get the content as base64 string
+        const content = event.target?.result as string;
+        
+        setTimeout(() => {
+          const newDocument: Document = {
+            id: uuidv4(),
+            name: file.name,
+            type: 'pdf',
+            content: content,
+            size: file.size,
+            influenceScore: 0.5,
+          };
+          
+          onDocumentUpload(newDocument);
+          clearInterval(interval);
+          setUploadingProgress(null);
+          
+          toast({
+            title: "Document uploaded",
+            description: `${file.name} has been added to your sources.`,
+          });
+        }, 1000);
+      };
+      
+      reader.onerror = () => {
+        setUploadingProgress(null);
+        toast({
+          title: "Upload failed",
+          description: "There was an error processing your document.",
+          variant: "destructive",
+        });
+      };
+      
+      // Read as data URL (base64 encoded) for PDFs
+      reader.readAsDataURL(file);
+    } else {
+      // For text files, use text encoding as before
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        const content = event.target?.result as string;
+        
+        // Simulate progress
+        const interval = setInterval(() => {
+          setUploadingProgress(prev => {
+            if (prev === null) return 0;
+            if (prev >= 100) {
+              clearInterval(interval);
+              return null;
+            }
+            return prev + 10;
+          });
+        }, 100);
+        
+        setTimeout(() => {
+          const newDocument: Document = {
+            id: uuidv4(),
+            name: file.name,
+            type: file.name.endsWith('.pdf') ? 'pdf' : 'text',
+            content: content,
+            size: file.size,
+            influenceScore: 0.5,
+          };
+          
+          onDocumentUpload(newDocument);
+          clearInterval(interval);
+          setUploadingProgress(null);
+          
+          toast({
+            title: "Document uploaded",
+            description: `${file.name} has been added to your sources.`,
+          });
+        }, 1000);
+      };
+      
+      reader.onerror = () => {
+        setUploadingProgress(null);
+        toast({
+          title: "Upload failed",
+          description: "There was an error processing your document.",
+          variant: "destructive",
+        });
+      };
+      
+      reader.readAsText(file);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -109,7 +175,7 @@ const UploadArea: React.FC<UploadAreaProps> = ({ onDocumentUpload }) => {
       <p className="text-sm text-center text-gray-500">
         <span className="font-medium">Click to upload</span> or drag and drop
       </p>
-      <p className="text-xs text-gray-400">PDF, TXT, or text snippet</p>
+      <p className="text-xs text-gray-400">PDF, TXT, or text snippet (max 5MB)</p>
       <input 
         type="file" 
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
