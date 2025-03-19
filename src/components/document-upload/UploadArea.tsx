@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
-import { Upload } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
 import { Document } from '@/types';
-import { v4 as uuidv4 } from 'uuid';
+import DropZone from './DropZone';
+import UploadProgress from './UploadProgress';
+import { isFileSizeValid, createDocumentFromTextFile, createDocumentFromPdfFile } from '@/utils/fileProcessing';
 
 interface UploadAreaProps {
   onDocumentUpload: (document: Document) => void;
@@ -24,12 +24,28 @@ const UploadArea: React.FC<UploadAreaProps> = ({ onDocumentUpload }) => {
     setIsDragging(false);
   };
 
+  const simulateUploadProgress = (callback: () => void) => {
+    setUploadingProgress(0);
+    const interval = setInterval(() => {
+      setUploadingProgress(prev => {
+        if (prev === null) return 0;
+        if (prev >= 100) {
+          clearInterval(interval);
+          callback();
+          return null;
+        }
+        return prev + 10;
+      });
+    }, 100);
+    
+    return interval;
+  };
+
   const processFile = (file: File) => {
     setUploadingProgress(0);
     
-    // Check file size (5MB limit)
-    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
-    if (file.size > MAX_FILE_SIZE) {
+    // Check file size
+    if (!isFileSizeValid(file.size)) {
       toast({
         title: "File too large",
         description: "Maximum file size is 5MB. Please upload a smaller file.",
@@ -40,46 +56,21 @@ const UploadArea: React.FC<UploadAreaProps> = ({ onDocumentUpload }) => {
     }
     
     if (file.name.endsWith('.pdf')) {
-      // For PDF files, use array buffer and encode as base64
+      // Process PDF files
       const reader = new FileReader();
       
       reader.onload = (event) => {
-        // Simulate progress
-        const interval = setInterval(() => {
-          setUploadingProgress(prev => {
-            if (prev === null) return 0;
-            if (prev >= 100) {
-              clearInterval(interval);
-              return null;
-            }
-            return prev + 10;
-          });
-        }, 100);
-        
-        // Get the content as base64 string
-        const content = event.target?.result as string;
-        
-        setTimeout(() => {
-          const newDocument: Document = {
-            id: uuidv4(),
-            name: file.name,
-            type: 'pdf',
-            content: content,
-            size: file.size,
-            influenceScore: 0.5,
-            poisoningLevel: 0,
-            excluded: false
-          };
+        const interval = simulateUploadProgress(() => {
+          const content = event.target?.result as string;
+          const newDocument = createDocumentFromPdfFile(file, content);
           
           onDocumentUpload(newDocument);
-          clearInterval(interval);
-          setUploadingProgress(null);
           
           toast({
             title: "Document uploaded",
             description: `${file.name} has been added to your sources.`,
           });
-        }, 1000);
+        });
       };
       
       reader.onerror = () => {
@@ -94,45 +85,22 @@ const UploadArea: React.FC<UploadAreaProps> = ({ onDocumentUpload }) => {
       // Read as data URL (base64 encoded) for PDFs
       reader.readAsDataURL(file);
     } else {
-      // For text files, use text encoding as before
+      // Process text files
       const reader = new FileReader();
       
       reader.onload = (event) => {
         const content = event.target?.result as string;
         
-        // Simulate progress
-        const interval = setInterval(() => {
-          setUploadingProgress(prev => {
-            if (prev === null) return 0;
-            if (prev >= 100) {
-              clearInterval(interval);
-              return null;
-            }
-            return prev + 10;
-          });
-        }, 100);
-        
-        setTimeout(() => {
-          const newDocument: Document = {
-            id: uuidv4(),
-            name: file.name,
-            type: file.name.endsWith('.pdf') ? 'pdf' : 'text',
-            content: content,
-            size: file.size,
-            influenceScore: 0.5,
-            poisoningLevel: 0,
-            excluded: false
-          };
+        const interval = simulateUploadProgress(() => {
+          const newDocument = createDocumentFromTextFile(file, content);
           
           onDocumentUpload(newDocument);
-          clearInterval(interval);
-          setUploadingProgress(null);
           
           toast({
             title: "Document uploaded",
             description: `${file.name} has been added to your sources.`,
           });
-        }, 1000);
+        });
       };
       
       reader.onerror = () => {
@@ -166,38 +134,16 @@ const UploadArea: React.FC<UploadAreaProps> = ({ onDocumentUpload }) => {
   };
 
   return (
-    <div 
-      className={cn(
-        "relative h-32 rounded-xl border-2 border-dashed transition-all duration-200 flex flex-col items-center justify-center gap-2",
-        isDragging ? "border-primary bg-primary/5" : "border-gray-200 hover:border-gray-300"
-      )}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      <Upload size={20} className="text-gray-400" />
-      <p className="text-sm text-center text-gray-500">
-        <span className="font-medium">Click to upload</span> or drag and drop
-      </p>
-      <p className="text-xs text-gray-400">PDF, TXT, or text snippet (max 5MB)</p>
-      <input 
-        type="file" 
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
-        onChange={handleFileInput}
-        accept=".pdf,.txt,text/plain"
+    <div className="relative">
+      <DropZone
+        isDragging={isDragging}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onFileInputChange={handleFileInput}
       />
       {uploadingProgress !== null && (
-        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center">
-          <div className="w-36">
-            <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-primary rounded-full transition-all duration-300" 
-                style={{ width: `${uploadingProgress}%` }}
-              />
-            </div>
-            <p className="text-xs text-center mt-2 text-gray-500">Uploading...</p>
-          </div>
-        </div>
+        <UploadProgress progress={uploadingProgress} />
       )}
     </div>
   );
