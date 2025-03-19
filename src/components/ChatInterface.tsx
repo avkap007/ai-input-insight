@@ -5,6 +5,7 @@ import { Message, TokenAttribution, AttributionData } from '@/types';
 import { cn } from '@/lib/utils';
 import InfluenceVisualization from './InfluenceVisualization';
 import AttributionChart from './AttributionChart';
+import ResponseAnalysis from './ResponseAnalysis';
 
 interface ChatInterfaceProps {
   messages: Message[];
@@ -84,6 +85,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       />
                       {message.attributionData && (
                         <AttributionChart data={message.attributionData} />
+                      )}
+                      {message.analysisData && (
+                        <ResponseAnalysis analysisData={message.analysisData} />
                       )}
                     </div>
                   )}

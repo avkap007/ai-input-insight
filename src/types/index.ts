@@ -6,6 +6,7 @@ export type Message = {
   timestamp: Date;
   attributions?: TokenAttribution[];
   attributionData?: AttributionData;
+  analysisData?: AnalysisData;
 };
 
 export type Document = {
@@ -15,6 +16,8 @@ export type Document = {
   content: string;
   size?: number;
   influenceScore?: number;
+  poisoningLevel?: number;
+  excluded?: boolean;
 };
 
 export type TokenAttribution = {
@@ -31,4 +34,10 @@ export type AttributionData = {
     name: string;
     contribution: number;
   }[];
+};
+
+export type AnalysisData = {
+  sentiment: number;
+  bias: Record<string, number>;
+  trustScore: number;
 };

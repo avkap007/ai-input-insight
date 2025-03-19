@@ -14,6 +14,8 @@ type Document = {
   content: string;
   size?: number;
   influenceScore?: number;
+  poisoningLevel?: number;
+  excluded?: boolean;
 };
 
 type TokenAttribution = {
@@ -63,8 +65,11 @@ serve(async (req) => {
 });
 
 function generateMockResponse(query: string, documents: Document[]): ResponsePayload {
+  // Filter out excluded documents
+  const activeDocuments = documents.filter(doc => !doc.excluded);
+  
   // If no documents are provided, return a simple response
-  if (documents.length === 0) {
+  if (activeDocuments.length === 0) {
     return {
       content: "I don't have any documents to reference. Please upload some documents so I can provide insights based on them.",
       attributions: [{
@@ -80,14 +85,14 @@ function generateMockResponse(query: string, documents: Document[]): ResponsePay
   }
   
   // Calculate the total influence scores
-  const totalInfluence = documents.reduce((sum, doc) => sum + (doc.influenceScore || 0.5), 0);
+  const totalInfluence = activeDocuments.reduce((sum, doc) => sum + (doc.influenceScore || 0.5), 0);
   
   // Normalize influence scores
-  const normalizedDocuments = documents.map(doc => ({
+  const normalizedDocuments = activeDocuments.map(doc => ({
     ...doc,
     normalizedInfluence: totalInfluence > 0 
       ? (doc.influenceScore || 0.5) / totalInfluence 
-      : 1 / documents.length
+      : 1 / activeDocuments.length
   }));
   
   // Sort documents by normalized influence (highest first)
@@ -100,14 +105,25 @@ function generateMockResponse(query: string, documents: Document[]): ResponsePay
   normalizedDocuments.forEach((doc, index) => {
     // Length of snippet is proportional to document influence
     const snippetLength = Math.max(30, Math.round(doc.normalizedInfluence * 200));
-    const snippet = doc.content.substring(0, Math.min(snippetLength, doc.content.length)).trim();
+    
+    // Get a snippet from the content
+    let snippet = doc.content.substring(0, Math.min(snippetLength, doc.content.length)).trim();
+    
+    // Add the snippet
     content += snippet;
+    
     if (index < normalizedDocuments.length - 1) {
       content += ". Furthermore, ";
     }
   });
   
   content += "\n\nThis response is influenced by your uploaded documents based on the influence levels you've set.";
+  
+  // Add information about data poisoning if any documents are poisoned
+  const poisonedDocs = normalizedDocuments.filter(doc => doc.poisoningLevel && doc.poisoningLevel > 0);
+  if (poisonedDocs.length > 0) {
+    content += "\n\nNote: Some of the source documents have simulated data poisoning applied, which may affect the reliability of this response.";
+  }
   
   // Create token attributions
   const attributions: TokenAttribution[] = [];
@@ -123,11 +139,20 @@ function generateMockResponse(query: string, documents: Document[]): ResponsePay
   normalizedDocuments.forEach((doc, index) => {
     const snippetLength = Math.max(30, Math.round(doc.normalizedInfluence * 200));
     const snippet = doc.content.substring(0, Math.min(snippetLength, doc.content.length)).trim();
+    
+    // Calculate confidence based on influence and poisoning
+    let confidence = 0.7 + (doc.normalizedInfluence * 0.3); // Higher influence = higher confidence
+    
+    // Reduce confidence if the document is poisoned
+    if (doc.poisoningLevel && doc.poisoningLevel > 0) {
+      confidence = confidence * (1 - doc.poisoningLevel * 0.5);
+    }
+    
     attributions.push({
       text: snippet,
       source: 'document',
       documentId: doc.id,
-      confidence: 0.7 + (doc.normalizedInfluence * 0.3) // Higher influence = higher confidence
+      confidence
     });
     
     if (index < normalizedDocuments.length - 1) {
@@ -145,6 +170,15 @@ function generateMockResponse(query: string, documents: Document[]): ResponsePay
     source: 'base',
     confidence: 0.95
   });
+  
+  // Add poisoning warning if applicable
+  if (poisonedDocs.length > 0) {
+    attributions.push({
+      text: "\n\nNote: Some of the source documents have simulated data poisoning applied, which may affect the reliability of this response.",
+      source: 'base',
+      confidence: 0.99
+    });
+  }
   
   // Base knowledge percentage (inverse of total normalized influence)
   const basePercentage = 40; // Fixed base percentage

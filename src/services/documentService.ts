@@ -12,6 +12,8 @@ export const mapDbDocumentToDocument = (dbDocument: DbDocument): Document => {
     content: dbDocument.content,
     size: dbDocument.size || undefined,
     influenceScore: dbDocument.influence_score,
+    poisoningLevel: 0, // Default values for new properties
+    excluded: false,
   };
 };
 
@@ -56,7 +58,12 @@ export const saveDocument = async (document: Document): Promise<Document> => {
     throw error;
   }
   
-  return mapDbDocumentToDocument(data as DbDocument);
+  // Return the document with client-side properties
+  return {
+    ...mapDbDocumentToDocument(data as DbDocument),
+    poisoningLevel: document.poisoningLevel || 0,
+    excluded: document.excluded || false
+  };
 };
 
 // Delete a document

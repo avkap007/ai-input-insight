@@ -67,6 +67,8 @@ const UploadArea: React.FC<UploadAreaProps> = ({ onDocumentUpload }) => {
             content: content,
             size: file.size,
             influenceScore: 0.5,
+            poisoningLevel: 0,
+            excluded: false
           };
           
           onDocumentUpload(newDocument);
@@ -118,6 +120,8 @@ const UploadArea: React.FC<UploadAreaProps> = ({ onDocumentUpload }) => {
             content: content,
             size: file.size,
             influenceScore: 0.5,
+            poisoningLevel: 0,
+            excluded: false
           };
           
           onDocumentUpload(newDocument);
