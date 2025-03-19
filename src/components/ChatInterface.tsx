@@ -31,6 +31,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -44,22 +45,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               <div className="text-center max-w-md px-4">
                 <h2 className="text-xl font-medium mb-2">AI Transparency Explorer</h2>
                 <p className="text-gray-500 mb-4">
-                  Upload documents and see how they influence AI-generated responses. Start a conversation to see the attribution analysis.
+                  Upload documents to see how they influence AI-generated responses. Try uploading creative writing samples or academic texts.
                 </p>
                 <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
                   <p className="text-sm text-gray-600">Try asking:</p>
                   <ul className="text-sm mt-2 space-y-2">
                     <li className="p-2 rounded hover:bg-gray-100 cursor-pointer transition-colors" 
-                        onClick={() => onSendMessage("Explain how large language models work based on the documents")}>
-                      "Explain how large language models work based on the documents"
+                        onClick={() => onSendMessage("Write me a short story about a 7-year-old boy going on an after-school adventure")}>
+                      "Write me a short story about a 7-year-old boy going on an after-school adventure"
                     </li>
                     <li className="p-2 rounded hover:bg-gray-100 cursor-pointer transition-colors"
-                        onClick={() => onSendMessage("Summarize the key concepts from my uploaded sources")}>
-                      "Summarize the key concepts from my uploaded sources"
+                        onClick={() => onSendMessage("Explain the importance of climate change using the style of my documents")}>
+                      "Explain the importance of climate change using the style of my documents"
                     </li>
                     <li className="p-2 rounded hover:bg-gray-100 cursor-pointer transition-colors"
-                        onClick={() => onSendMessage("What ethical considerations are mentioned in the documents?")}>
-                      "What ethical considerations are mentioned in the documents?"
+                        onClick={() => onSendMessage("Create a poem about friendship inspired by my documents")}>
+                      "Create a poem about friendship inspired by my documents"
                     </li>
                   </ul>
                 </div>
@@ -116,7 +117,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 </div>
               </div>
               <div className="mt-1 text-xs text-gray-400 px-2">
-                Processing...
+                Processing your request...
               </div>
             </div>
           )}
@@ -129,7 +130,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about your documents..."
+            placeholder="Ask a question or request content based on your documents..."
             className="flex-1 input-field"
             disabled={isProcessing}
           />

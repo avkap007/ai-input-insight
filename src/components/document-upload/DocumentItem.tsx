@@ -85,9 +85,17 @@ const DocumentItem: React.FC<DocumentItemProps> = ({
                 </Label>
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
-                <p className="text-xs">
-                  Controls how much this document impacts the AI's response. Higher values give this document more weight in the final output.
-                </p>
+                <div className="space-y-2">
+                  <p className="text-xs font-medium">Document Influence Control</p>
+                  <p className="text-xs">
+                    Controls how much this document impacts the AI's response. Higher values give this document more weight in the final output.
+                  </p>
+                  <ul className="text-xs list-disc pl-4 space-y-1">
+                    <li>100%: Maximum influence - strongly shapes the response</li>
+                    <li>50%: Moderate influence - balanced with other documents</li>
+                    <li>0%: Minimal influence - barely affects the output</li>
+                  </ul>
+                </div>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -117,11 +125,20 @@ const DocumentItem: React.FC<DocumentItemProps> = ({
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
                     <div className="space-y-2">
+                      <p className="text-xs font-medium">Data Poisoning Simulation</p>
                       <p className="text-xs">
                         <strong>Simulates manipulated or adversarial data.</strong> Higher values introduce more perturbations to document content before it reaches the AI model.
                       </p>
                       <p className="text-xs">
-                        In real-world AI systems, data poisoning can lead to biased outputs, security vulnerabilities, or model manipulation.
+                        In AI systems, data poisoning is a technique where malicious actors intentionally modify training data to manipulate model outputs or create backdoors. Common approaches include:
+                      </p>
+                      <ul className="text-xs list-disc pl-4 space-y-1">
+                        <li><strong>Label flipping:</strong> Changing correct labels to incorrect ones</li>
+                        <li><strong>Content manipulation:</strong> Subtly altering text to trigger specific behaviors</li>
+                        <li><strong>Backdoor insertion:</strong> Adding patterns that can later be exploited</li>
+                      </ul>
+                      <p className="text-xs text-amber-600 font-medium">
+                        For educational purposes only
                       </p>
                     </div>
                   </TooltipContent>
@@ -150,11 +167,15 @@ const DocumentItem: React.FC<DocumentItemProps> = ({
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
                   <div className="space-y-2">
+                    <p className="text-xs font-medium">Document Exclusion ("Data Strike")</p>
                     <p className="text-xs">
-                      <strong>Simulates a "data strike"</strong> by completely removing this document from the AI's knowledge base.
+                      <strong>Simulates complete data withdrawal</strong> by removing this document from the AI's knowledge base.
                     </p>
                     <p className="text-xs">
-                      This represents the concept of "data sovereignty" where individuals or groups can withdraw their data from AI systems.
+                      This represents the concept of "data sovereignty" - the idea that individuals or groups should have control over their data and can withdraw it from AI systems.
+                    </p>
+                    <p className="text-xs">
+                      Researchers have explored "data strikes" as a form of collective action against AI systems. When enabled, the document will be completely ignored during response generation.
                     </p>
                   </div>
                 </TooltipContent>

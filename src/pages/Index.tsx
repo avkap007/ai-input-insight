@@ -85,6 +85,13 @@ const Index = () => {
           }
         />
       </main>
+
+      {/* Attribution footer */}
+      <footer className="bg-gray-50 border-t border-gray-100 py-2 px-4 text-center text-xs text-gray-500">
+        <p>
+          AI Transparency Explorer | Developed as part of CMPT 415 directed studies under guidance of Dr. Nic Vincent and Dr. Margaret Grant
+        </p>
+      </footer>
     </div>
   );
 };
