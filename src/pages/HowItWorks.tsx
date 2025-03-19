@@ -47,6 +47,13 @@ const HowItWorks: React.FC = () => {
                 </li>
               </ul>
               
+              <h3 className="text-xl font-semibold mt-6 mb-3">Implementation in Our Application:</h3>
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong>InfluenceVisualization Component:</strong> We implement token highlighting using the <code>InfluenceVisualization.tsx</code> component, which maps tokens to their sources.</li>
+                <li><strong>Attribution Data Structure:</strong> We use a specialized data structure (<code>TokenAttribution</code> type in <code>src/types/index.ts</code>) to track the source and confidence of each token.</li>
+                <li><strong>Backend Processing:</strong> Our Supabase edge function (<code>supabase/functions/generate-response/index.ts</code>) performs the attribution calculations, assigning tokens to either base knowledge or specific document sources.</li>
+              </ul>
+              
               <h3 className="text-xl font-semibold mt-6 mb-3">Recommended Resources:</h3>
               <ul className="list-disc pl-6 space-y-2">
                 <li><strong>Research Paper:</strong> "Measuring Attribution in Natural Language Generation Models" provides a framework for evaluating attribution in NLP models. (direct.mit.edu)</li>
@@ -77,6 +84,13 @@ const HowItWorks: React.FC = () => {
                   <p>where w<sub>i</sub> is the weight for the i-th sample, y<sub>i</sub> is the true value, and ŷ<sub>i</sub> is the predicted value.</p>
                 </li>
               </ul>
+              
+              <h3 className="text-xl font-semibold mt-6 mb-3">Implementation in Our Application:</h3>
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong>Document Influence Sliders:</strong> We allow users to adjust influence scores through interactive sliders in the <code>DocumentItem.tsx</code> component.</li>
+                <li><strong>Normalization Algorithm:</strong> In our edge function, we normalize these influence scores to determine the weighted contribution of each document via the <code>normalizedInfluence</code> calculation.</li>
+                <li><strong>Visualization:</strong> The <code>AttributionChart.tsx</code> component visualizes these weights as contribution percentages in a chart.</li>
+              </ul>
             </div>
           </section>
           
@@ -93,6 +107,13 @@ const HowItWorks: React.FC = () => {
                 <li><strong>Clean-Label Attacks:</strong> Poisoning that doesn't change the labels of training examples, making it harder to detect.</li>
               </ul>
               
+              <h3 className="text-xl font-semibold mt-6 mb-3">Implementation in Our Application:</h3>
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong>Poisoning Controls:</strong> We implement poisoning level controls in <code>DocumentItem.tsx</code> that allow users to simulate different levels of data manipulation.</li>
+                <li><strong>Simulation Function:</strong> The <code>simulateDataPoisoning()</code> function in <code>utils/contentAnalysis.ts</code> applies modifications to document content based on the poisoning level.</li>
+                <li><strong>Response Flagging:</strong> Our system automatically flags responses that were influenced by poisoned data, allowing users to observe the effects.</li>
+              </ul>
+              
               <h3 className="text-xl font-semibold mt-6 mb-3">Defense Mechanisms:</h3>
               <ul className="list-disc pl-6 space-y-2">
                 <li><strong>Robust Training:</strong> Using methods like adversarial training to make models resilient to poisoned data.</li>
@@ -103,7 +124,101 @@ const HowItWorks: React.FC = () => {
           </section>
           
           <section className="mb-12">
-            <h2 className="text-2xl font-bold mb-4">4. Our Implementation</h2>
+            <h2 className="text-2xl font-bold mb-4">4. Response Analysis & Visualization</h2>
+            
+            <div className="mb-6">
+              <p className="mb-2"><strong>Definition:</strong> Techniques to analyze and visualize AI-generated responses, focusing on sentiment, bias, and trust indicators.</p>
+              
+              <h3 className="text-xl font-semibold mt-6 mb-3">Key Components:</h3>
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong>Sentiment Analysis:</strong> Our application uses lexicon-based sentiment analysis implemented in <code>utils/contentAnalysis.ts</code> through the <code>analyzeSentiment()</code> function, which assigns a score from -1 (negative) to 1 (positive).</li>
+                <li><strong>Bias Detection:</strong> The <code>detectBias()</code> function identifies potential biases across categories by analyzing word frequency and context patterns.</li>
+                <li><strong>Trust Scoring:</strong> We calculate a composite trust score using the <code>calculateTrustScore()</code> function, which considers source diversity, attribution confidence, and the balance of base knowledge vs. document contributions.</li>
+              </ul>
+              
+              <h3 className="text-xl font-semibold mt-6 mb-3">Visualization Techniques:</h3>
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong>Interactive Highlighting:</strong> The <code>InfluenceVisualization</code> component implements hover-based highlighting to show token sources.</li>
+                <li><strong>Charts and Graphs:</strong> We use <code>recharts</code> in the <code>AttributionChart</code> and <code>ResponseAnalysis</code> components to visualize contribution percentages, sentiment trends, and bias indicators.</li>
+                <li><strong>Progress Indicators:</strong> Trust scores and sentiment values are displayed using interactive progress bars with color-coding to indicate significance.</li>
+              </ul>
+            </div>
+          </section>
+          
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold mb-4">5. Technical Architecture</h2>
+            
+            <div className="mb-6">
+              <h3 className="text-xl font-semibold mt-6 mb-3">Frontend Components:</h3>
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong>Document Management:</strong> <code>DocumentUpload.tsx</code>, <code>DocumentItem.tsx</code>, and associated components handle file uploads and document controls.</li>
+                <li><strong>Chat Interface:</strong> <code>ChatInterface.tsx</code> manages user queries and displays AI responses.</li>
+                <li><strong>Visualizations:</strong> <code>InfluenceVisualization.tsx</code>, <code>AttributionChart.tsx</code>, and <code>ResponseAnalysis.tsx</code> provide interactive visualizations of AI behavior.</li>
+                <li><strong>Layout:</strong> <code>MainLayout.tsx</code> handles the application's responsive layout structure.</li>
+              </ul>
+              
+              <h3 className="text-xl font-semibold mt-6 mb-3">Backend Services:</h3>
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong>Data Storage:</strong> Supabase PostgreSQL database stores chat sessions, messages, documents, and attribution data for analysis.</li>
+                <li><strong>Edge Functions:</strong> <code>generate-response</code> function processes user queries with document context and produces attributed responses.</li>
+                <li><strong>Authentication:</strong> Supabase authentication service handles user sessions (though currently not implemented in the demo).</li>
+              </ul>
+              
+              <h3 className="text-xl font-semibold mt-6 mb-3">Data Flow Architecture:</h3>
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong>User Query Lifecycle:</strong>
+                  <ol className="list-decimal pl-6 mt-2">
+                    <li>User submits a query through <code>ChatInterface</code></li>
+                    <li>Query is processed by <code>handleSendMessage</code> in <code>use-messages.tsx</code></li>
+                    <li>Message and document data are sent to the <code>generate-response</code> edge function</li>
+                    <li>Edge function processes the query, considering document influence and poisoning</li>
+                    <li>Response with attribution data is returned and displayed</li>
+                    <li>All data is saved to Supabase for later analysis</li>
+                  </ol>
+                </li>
+                <li><strong>Document Processing:</strong>
+                  <ol className="list-decimal pl-6 mt-2">
+                    <li>User uploads a document through <code>DocumentUpload</code></li>
+                    <li>Files are processed by <code>fileProcessing.ts</code> utilities</li>
+                    <li>Documents are stored in application state via <code>use-documents.tsx</code></li>
+                    <li>User can adjust influence, poisoning level, and exclusion settings</li>
+                  </ol>
+                </li>
+              </ul>
+            </div>
+          </section>
+          
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold mb-4">6. Data Storage & Analysis</h2>
+            
+            <div className="mb-6">
+              <p className="mb-2"><strong>Database Schema:</strong> Our application uses the following Supabase tables to persist data for analysis:</p>
+              
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong>chat_sessions:</strong> Stores information about each chat session</li>
+                <li><strong>messages:</strong> Stores all user queries and AI responses</li>
+                <li><strong>documents:</strong> Stores uploaded documents with metadata</li>
+                <li><strong>token_attributions:</strong> Stores token-level attribution data</li>
+                <li><strong>attribution_data:</strong> Stores aggregate attribution metrics</li>
+              </ul>
+              
+              <p className="mt-4 mb-2"><strong>Analysis Workflow:</strong> You can retrieve stored interactions for analysis via:</p>
+              
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong>Direct Database Access:</strong> Query the Supabase database tables using SQL to extract specific patterns or trends</li>
+                <li><strong>Session Replays:</strong> While not currently implemented, the stored data could support a feature to "replay" previous sessions</li>
+                <li><strong>Export Functionality:</strong> A future enhancement could include exporting data in formats suitable for external analysis (CSV, JSON)</li>
+              </ul>
+              
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mt-6">
+                <p className="font-medium">Research Note:</p>
+                <p>All interactions in this application are saved to the Supabase database, making it ideal for conducting mock studies. You can collect multiple interaction examples and then analyze them for patterns in how different document attributes (influence, poisoning) affect the AI's responses over time.</p>
+              </div>
+            </div>
+          </section>
+          
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold mb-4">7. Our Implementation</h2>
             
             <div className="mb-6">
               <p>This application demonstrates these concepts by:</p>
@@ -119,6 +234,16 @@ const HowItWorks: React.FC = () => {
               <p className="mt-4">
                 By experimenting with different influence levels and data poisoning settings, users can gain insights into how AI models combine information from various sources and how they might be vulnerable to manipulation.
               </p>
+              
+              <div className="bg-gray-50 p-4 rounded-md mt-6 border border-gray-200">
+                <h4 className="font-medium mb-2">Tech Stack:</h4>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li><strong>Frontend:</strong> React, TypeScript, Tailwind CSS, shadcn/ui components</li>
+                  <li><strong>Visualization:</strong> Recharts for data visualization</li>
+                  <li><strong>Backend:</strong> Supabase for database and serverless edge functions</li>
+                  <li><strong>AI Integration:</strong> Anthropic Claude API (optional)</li>
+                </ul>
+              </div>
             </div>
           </section>
         </div>
