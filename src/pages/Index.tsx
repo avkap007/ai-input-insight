@@ -9,12 +9,23 @@ import { supabase } from '@/integrations/supabase/client';
 import { getDocuments, saveDocument, deleteDocument, updateDocumentInfluence } from '@/services/documentService';
 import { createChatSession, getMessages, saveMessage } from '@/services/chatService';
 import { analyzeSentiment, detectBias, calculateTrustScore, simulateDataPoisoning } from '@/utils/contentAnalysis';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { SlidersHorizontal } from 'lucide-react';
 
 const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [chatSessionId, setChatSessionId] = useState<string | null>(null);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const isMobile = useIsMobile();
+
+  useEffect(() => {
+    // On mobile, hide sidebar by default
+    if (isMobile) {
+      setShowSidebar(false);
+    }
+  }, [isMobile]);
 
   useEffect(() => {
     const initializeChat = async () => {
@@ -148,6 +159,11 @@ const Index = () => {
       setMessages(prev => [...prev, savedUserMessage]);
       setIsProcessing(true);
       
+      // On mobile, hide sidebar when message is sent
+      if (isMobile && showSidebar) {
+        setShowSidebar(false);
+      }
+      
       // Prepare documents - apply data poisoning and handle exclusions
       const processedDocuments = documents
         .filter(doc => !doc.excluded)
@@ -210,22 +226,57 @@ const Index = () => {
     }
   };
 
+  const toggleSidebar = () => {
+    setShowSidebar(!showSidebar);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="flex-1 flex flex-col lg:flex-row">
-        <div className="w-full lg:w-1/4 p-6 border-r border-gray-100 bg-gray-50">
-          <DocumentUpload 
-            onDocumentUpload={handleDocumentUpload}
-            documents={documents}
-            onRemoveDocument={handleRemoveDocument}
-            onUpdateDocumentInfluence={handleUpdateDocumentInfluence}
-            onUpdateDocumentPoisoning={handleUpdateDocumentPoisoning}
-            onUpdateDocumentExclusion={handleUpdateDocumentExclusion}
+      <main className="flex-1 flex flex-col lg:flex-row relative">
+        {/* Mobile toggle button */}
+        {isMobile && (
+          <button 
+            onClick={toggleSidebar}
+            className="absolute top-2 left-2 z-20 p-2 bg-white/80 backdrop-blur-sm rounded-md shadow-sm border border-gray-100"
+            aria-label={showSidebar ? "Hide documents" : "Show documents"}
+          >
+            <SlidersHorizontal size={20} className={showSidebar ? "text-primary" : "text-gray-500"} />
+          </button>
+        )}
+        
+        {/* Sidebar overlay for mobile */}
+        {isMobile && showSidebar && (
+          <div 
+            className="fixed inset-0 bg-black/20 z-10"
+            onClick={() => setShowSidebar(false)}
           />
+        )}
+        
+        {/* Document sidebar */}
+        <div 
+          className={`${
+            isMobile 
+              ? `fixed inset-y-0 left-0 z-10 w-5/6 max-w-xs bg-white shadow-lg transform transition-transform ${
+                  showSidebar ? 'translate-x-0' : '-translate-x-full'
+                }`
+              : 'w-full lg:w-1/4 border-r border-gray-100 bg-gray-50'
+          }`}
+        >
+          <div className="p-6 h-full overflow-y-auto">
+            <DocumentUpload 
+              onDocumentUpload={handleDocumentUpload}
+              documents={documents}
+              onRemoveDocument={handleRemoveDocument}
+              onUpdateDocumentInfluence={handleUpdateDocumentInfluence}
+              onUpdateDocumentPoisoning={handleUpdateDocumentPoisoning}
+              onUpdateDocumentExclusion={handleUpdateDocumentExclusion}
+            />
+          </div>
         </div>
         
+        {/* Chat interface */}
         <div className="flex-1">
           <ChatInterface 
             messages={messages} 

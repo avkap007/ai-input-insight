@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { File, FileText, X, AlertTriangle } from 'lucide-react';
+import { File, FileText, X, AlertTriangle, InfoIcon } from 'lucide-react';
 import { Document } from '@/types';
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
@@ -76,9 +76,21 @@ const DocumentItem: React.FC<DocumentItemProps> = ({
       
       <div className="w-full">
         <div className="flex justify-between items-center mb-1">
-          <Label htmlFor={`influence-${document.id}`} className="text-xs text-gray-500">
-            Influence: {Math.round((document.influenceScore || 0) * 100)}%
-          </Label>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label htmlFor={`influence-${document.id}`} className="text-xs text-gray-500 flex items-center cursor-help">
+                  Influence: {Math.round((document.influenceScore || 0) * 100)}%
+                  <InfoIcon size={12} className="ml-1 text-gray-400" />
+                </Label>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p className="text-xs">
+                  Controls how much this document impacts the AI's response. Higher values give this document more weight in the final output.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         <Slider
           id={`influence-${document.id}`}
@@ -103,10 +115,15 @@ const DocumentItem: React.FC<DocumentItemProps> = ({
                       <AlertTriangle size={12} className="ml-1 text-amber-500" />
                     </Label>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-xs max-w-xs">
-                      Simulates corrupted or manipulated data by altering content or changing sentiment.
-                    </p>
+                  <TooltipContent className="max-w-xs">
+                    <div className="space-y-2">
+                      <p className="text-xs">
+                        <strong>Simulates manipulated or adversarial data.</strong> Higher values introduce more perturbations to document content before it reaches the AI model.
+                      </p>
+                      <p className="text-xs">
+                        In real-world AI systems, data poisoning can lead to biased outputs, security vulnerabilities, or model manipulation.
+                      </p>
+                    </div>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -131,10 +148,15 @@ const DocumentItem: React.FC<DocumentItemProps> = ({
                     <AlertTriangle size={12} className="ml-1 text-amber-500" />
                   </Label>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-xs max-w-xs">
-                    Simulates a "data strike" by completely excluding this document from AI training.
-                  </p>
+                <TooltipContent className="max-w-xs">
+                  <div className="space-y-2">
+                    <p className="text-xs">
+                      <strong>Simulates a "data strike"</strong> by completely removing this document from the AI's knowledge base.
+                    </p>
+                    <p className="text-xs">
+                      This represents the concept of "data sovereignty" where individuals or groups can withdraw their data from AI systems.
+                    </p>
+                  </div>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

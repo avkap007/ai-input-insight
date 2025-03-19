@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import InfluenceVisualization from './InfluenceVisualization';
 import AttributionChart from './AttributionChart';
 import ResponseAnalysis from './ResponseAnalysis';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ChatInterfaceProps {
   messages: Message[];
@@ -20,6 +21,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +41,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <div className="space-y-6 p-4">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-center max-w-md">
+              <div className="text-center max-w-md px-4">
                 <h2 className="text-xl font-medium mb-2">AI Transparency Explorer</h2>
                 <p className="text-gray-500 mb-4">
                   Upload documents and see how they influence AI-generated responses. Start a conversation to see the attribution analysis.
@@ -47,13 +49,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
                   <p className="text-sm text-gray-600">Try asking:</p>
                   <ul className="text-sm mt-2 space-y-2">
-                    <li className="p-2 rounded hover:bg-gray-100 cursor-pointer transition-colors">
+                    <li className="p-2 rounded hover:bg-gray-100 cursor-pointer transition-colors" 
+                        onClick={() => onSendMessage("Explain how large language models work based on the documents")}>
                       "Explain how large language models work based on the documents"
                     </li>
-                    <li className="p-2 rounded hover:bg-gray-100 cursor-pointer transition-colors">
+                    <li className="p-2 rounded hover:bg-gray-100 cursor-pointer transition-colors"
+                        onClick={() => onSendMessage("Summarize the key concepts from my uploaded sources")}>
                       "Summarize the key concepts from my uploaded sources"
                     </li>
-                    <li className="p-2 rounded hover:bg-gray-100 cursor-pointer transition-colors">
+                    <li className="p-2 rounded hover:bg-gray-100 cursor-pointer transition-colors"
+                        onClick={() => onSendMessage("What ethical considerations are mentioned in the documents?")}>
                       "What ethical considerations are mentioned in the documents?"
                     </li>
                   </ul>
@@ -65,7 +70,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               <div 
                 key={message.id} 
                 className={cn(
-                  "max-w-3xl",
+                  isMobile ? "max-w-[90%]" : "max-w-3xl",
                   message.role === 'user' ? 'ml-auto' : 'mr-auto'
                 )}
               >
@@ -93,13 +98,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   )}
                 </div>
                 <div className="mt-1 text-xs text-gray-400 px-2">
-                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>
             ))
           )}
           {isProcessing && (
-            <div className="max-w-3xl mr-auto">
+            <div className={cn(
+              isMobile ? "max-w-[90%]" : "max-w-3xl",
+              "mr-auto"
+            )}>
               <div className="bg-gray-100 text-gray-800 rounded-2xl p-6">
                 <div className="flex space-x-2">
                   <div className="h-2 w-2 rounded-full bg-gray-300 animate-pulse"></div>

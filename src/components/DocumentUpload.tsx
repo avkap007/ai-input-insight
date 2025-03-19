@@ -9,7 +9,7 @@ import DocumentsList from './document-upload/DocumentsList';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info } from 'lucide-react';
+import { Info, AlertTriangle } from 'lucide-react';
 
 interface DocumentUploadProps {
   onDocumentUpload: (document: Document) => void;
@@ -58,13 +58,28 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
                       <Label htmlFor="advanced-controls" className="text-xs cursor-pointer">
                         Advanced Controls
                       </Label>
-                      <Info size={12} className="ml-1 text-gray-400" />
+                      {showAdvancedControls ? (
+                        <AlertTriangle size={12} className="ml-1 text-amber-500" />
+                      ) : (
+                        <Info size={12} className="ml-1 text-gray-400" />
+                      )}
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-xs max-w-xs">
-                      Enable advanced controls for data poisoning experiments and document exclusion.
-                    </p>
+                  <TooltipContent className="max-w-sm">
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">Advanced AI Controls</h4>
+                      <p className="text-xs">
+                        Enable additional controls to experiment with AI transparency concepts:
+                      </p>
+                      <ul className="list-disc pl-4 text-xs space-y-1">
+                        <li><strong>Data Poisoning:</strong> Simulates how corrupted or adversarial data can affect AI outputs</li>
+                        <li><strong>Document Exclusion:</strong> Demonstrates data withdrawal or "data strikes" where content is completely removed from the AI's consideration</li>
+                      </ul>
+                      <p className="text-xs text-amber-600 flex items-center gap-1">
+                        <AlertTriangle size={12} />
+                        <span>For research and educational purposes only</span>
+                      </p>
+                    </div>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
