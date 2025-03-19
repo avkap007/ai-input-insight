@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -213,7 +212,7 @@ async function generateAnthropicResponse(query: string, documents: Document[]): 
   };
 }
 
-function generateMockResponse(query: string, documents: Document[]): ResponsePayload {
+function generateMockResponse(query: string, documents: Document[]): Promise<ResponsePayload> {
   // Filter out excluded documents
   const activeDocuments = documents.filter(doc => !doc.excluded);
   
