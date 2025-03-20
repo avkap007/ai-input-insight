@@ -74,20 +74,34 @@ export const saveTokenAttributions = async (
   messageId: string,
   attributions: TokenAttribution[]
 ): Promise<void> => {
-  const dbAttributions = attributions.map(attribution => ({
-    message_id: messageId,
-    text: attribution.text,
-    source: attribution.source,
-    document_id: attribution.documentId || null,
-    confidence: attribution.confidence,
-  }));
-  
-  const { error } = await supabase
-    .from('token_attributions')
-    .insert(dbAttributions);
-  
-  if (error) {
-    console.error("Error saving token attributions:", error);
+  try {
+    if (!attributions || attributions.length === 0) {
+      console.log(`No attributions to save for message ${messageId}`);
+      return;
+    }
+    
+    console.log(`Saving ${attributions.length} token attributions for message ${messageId}`);
+    
+    const dbAttributions = attributions.map(attribution => ({
+      message_id: messageId,
+      text: attribution.text,
+      source: attribution.source,
+      document_id: attribution.documentId || null,
+      confidence: attribution.confidence,
+    }));
+    
+    const { error } = await supabase
+      .from('token_attributions')
+      .insert(dbAttributions);
+    
+    if (error) {
+      console.error("Error saving token attributions:", error);
+      throw error;
+    }
+    
+    console.log(`Successfully saved attributions for message ${messageId}`);
+  } catch (error) {
+    console.error(`Error in saveTokenAttributions for message ${messageId}:`, error);
     throw error;
   }
 };
@@ -97,16 +111,25 @@ export const saveAttributionData = async (
   messageId: string,
   attributionData: AttributionData
 ): Promise<void> => {
-  const { error } = await supabase
-    .from('attribution_data')
-    .insert([{
-      message_id: messageId,
-      base_knowledge_percentage: attributionData.baseKnowledge,
-      document_contributions: attributionData.documents,
-    }]);
-  
-  if (error) {
-    console.error("Error saving attribution data:", error);
+  try {
+    console.log(`Saving attribution data for message ${messageId}:`, attributionData);
+    
+    const { error } = await supabase
+      .from('attribution_data')
+      .insert([{
+        message_id: messageId,
+        base_knowledge_percentage: attributionData.baseKnowledge,
+        document_contributions: attributionData.documents,
+      }]);
+    
+    if (error) {
+      console.error("Error saving attribution data:", error);
+      throw error;
+    }
+    
+    console.log(`Successfully saved attribution data for message ${messageId}`);
+  } catch (error) {
+    console.error(`Error in saveAttributionData for message ${messageId}:`, error);
     throw error;
   }
 };

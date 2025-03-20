@@ -68,25 +68,36 @@ export const saveDocument = async (document: Document): Promise<Document> => {
 
 // Delete a document
 export const deleteDocument = async (id: string): Promise<void> => {
-  // First, delete any related token attributions
-  const { error: attributionError } = await supabase
-    .from('token_attributions')
-    .delete()
-    .eq('document_id', id);
-  
-  if (attributionError) {
-    console.error("Error deleting related token attributions:", attributionError);
-    // Continue with document deletion even if attribution deletion fails
-  }
-  
-  // Now delete the document
-  const { error } = await supabase
-    .from('documents')
-    .delete()
-    .eq('id', id);
-  
-  if (error) {
-    console.error("Error deleting document:", error);
+  try {
+    console.log(`Deleting document with ID: ${id}`);
+    
+    // First, delete any related token attributions
+    const { error: attributionError, count } = await supabase
+      .from('token_attributions')
+      .delete()
+      .eq('document_id', id);
+    
+    if (attributionError) {
+      console.error("Error deleting related token attributions:", attributionError);
+      throw attributionError;
+    }
+    
+    console.log(`Deleted ${count || 0} token attributions for document ${id}`);
+    
+    // Now delete the document
+    const { error } = await supabase
+      .from('documents')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error("Error deleting document:", error);
+      throw error;
+    }
+    
+    console.log(`Successfully deleted document ${id}`);
+  } catch (error) {
+    console.error(`Error in deleteDocument function for ID ${id}:`, error);
     throw error;
   }
 };

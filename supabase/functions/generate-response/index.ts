@@ -6,6 +6,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Get environment variables
+const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY') || '';
+
+// Log setup information for debugging
+console.log("Anthropic API Key Loaded:", ANTHROPIC_API_KEY ? "Yes" : "No");
+if (!ANTHROPIC_API_KEY) {
+  console.error("Error: Anthropic API key is missing. Check Supabase secrets.");
+}
+
+// Type definitions
 type Document = {
   id: string;
   name: string;
@@ -39,14 +49,9 @@ type ResponsePayload = {
   attributionData: AttributionData;
 };
 
-const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY') || '';
-
-console.log("Anthropic API Key Loaded:", ANTHROPIC_API_KEY ? "Yes" : "No");
-if (!ANTHROPIC_API_KEY) {
-  console.error("Error: Anthropic API key is missing. Check Supabase secrets.");
-}
-
+// Main request handler
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
