@@ -57,7 +57,11 @@ const AttributionChart: React.FC<AttributionChartProps> = ({ data }) => {
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value) => [`${value.toFixed(1)}%`, 'Contribution']}
+                formatter={(value) => {
+                  // Handle the type safely - ensure value is a number before calling toFixed
+                  const numValue = typeof value === 'number' ? value : parseFloat(String(value));
+                  return isNaN(numValue) ? [value, 'Contribution'] : [`${numValue.toFixed(1)}%`, 'Contribution'];
+                }}
                 labelFormatter={(index) => filteredData[index].name}
               />
             </PieChart>

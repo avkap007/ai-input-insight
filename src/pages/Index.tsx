@@ -10,6 +10,7 @@ import { createChatSession } from '@/services/chatService';
 import { useDocuments } from '@/hooks/use-documents';
 import { useMessages } from '@/hooks/use-messages';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Document } from '@/types';
 
 const Index = () => {
   const [chatSessionId, setChatSessionId] = useState<string | null>(null);
@@ -18,8 +19,9 @@ const Index = () => {
   // Initialize documents state with the useDocuments hook
   const {
     documents,
-    setDocuments,
+    isLoading,
     handleDocumentUpload,
+    handleAddTextDocument,
     handleRemoveDocument,
     handleUpdateDocumentInfluence,
     handleUpdateDocumentPoisoning,
@@ -31,7 +33,18 @@ const Index = () => {
     messages,
     isProcessing,
     handleSendMessage
-  } = useMessages(chatSessionId, documents);
+  } = useMessages(chatSessionId);
+
+  // Create a wrapper function to handle document uploads for DocumentUpload component
+  const handleDocUpload = (document: Document) => {
+    // Simply pass on the document as is - it's already in the right format
+    return document;
+  };
+
+  // Create a wrapper function to handle sending messages with documents
+  const handleSendMessageWithDocs = (content: string) => {
+    return handleSendMessage(content, documents);
+  };
 
   useEffect(() => {
     const initializeChat = async () => {
@@ -39,14 +52,7 @@ const Index = () => {
         const sessionId = await createChatSession();
         setChatSessionId(sessionId);
         
-        const docs = await getDocuments();
-        // Initialize advanced properties
-        const docsWithAdvancedProps = docs.map(doc => ({
-          ...doc,
-          poisoningLevel: 0,
-          excluded: false
-        }));
-        setDocuments(docsWithAdvancedProps);
+        // We've removed the document loading since it's handled by the useDocuments hook
       } catch (error) {
         console.error("Error initializing chat:", error);
         toast({
@@ -68,7 +74,7 @@ const Index = () => {
         <MainLayout
           sidebar={
             <DocumentUpload 
-              onDocumentUpload={handleDocumentUpload}
+              onDocumentUpload={handleDocUpload}
               documents={documents}
               onRemoveDocument={handleRemoveDocument}
               onUpdateDocumentInfluence={handleUpdateDocumentInfluence}
@@ -79,7 +85,7 @@ const Index = () => {
           content={
             <ChatInterface 
               messages={messages} 
-              onSendMessage={handleSendMessage}
+              onSendMessage={handleSendMessageWithDocs}
               isProcessing={isProcessing}
             />
           }

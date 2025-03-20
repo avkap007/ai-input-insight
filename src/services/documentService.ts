@@ -1,3 +1,4 @@
+
 import { Document } from "@/types";
 import { documentClient } from "@/utils/apiClients";
 
@@ -40,7 +41,8 @@ export const saveDocument = async (document: Document): Promise<Document> => {
   const data = await response.json();
   
   try {
-    await documentClient.uploadDocuments([{ id: data.id, ...document }]);
+    // Fix: Changed uploadDocuments to uploadDocument and handle single document
+    await documentClient.uploadDocument({ id: data.id, ...document });
     console.log("Document also uploaded to centralized API");
   } catch (apiError) {
     console.error("Error uploading to document API (continuing with local save):", apiError);

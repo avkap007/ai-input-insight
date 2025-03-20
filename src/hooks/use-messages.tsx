@@ -6,11 +6,13 @@ import { responseClient } from "@/utils/apiClients";
 import { analysisClient } from "@/utils/apiClients";
 import { v4 as uuidv4 } from "uuid";
 
-export const useMessages = (documents: Document[]) => {
+// Changed to accept a chatSessionId parameter, but make it optional with default value of null
+export const useMessages = (chatSessionId: string | null = null) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleSendMessage = async (content: string) => {
+  // Updated handleSendMessage to accept documents as a parameter
+  const handleSendMessage = async (content: string, documents: Document[]) => {
     try {
       // Add user message to the UI immediately
       const userMessage: Message = {
