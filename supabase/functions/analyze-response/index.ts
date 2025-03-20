@@ -14,6 +14,22 @@ serve(async (req) => {
 
   try {
     const { generated_text } = await req.json();
+    
+    // Guard against undefined or null generated_text
+    if (!generated_text) {
+      console.error("Error: generated_text is undefined or null");
+      return new Response(JSON.stringify({
+        error: "No text provided for analysis",
+        sentiment: "Neutral",
+        sentiment_value: 0,
+        bias_indicators: {},
+        trust_score: 50
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
     console.log("Analyzing text of length:", generated_text.length);
     
     // Implement simple sentiment analysis
@@ -37,7 +53,13 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Error in analyze-response function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      sentiment: "Neutral",
+      sentiment_value: 0,
+      bias_indicators: {},
+      trust_score: 50
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -48,6 +70,12 @@ serve(async (req) => {
  * Simple sentiment analysis function that returns a value between -1 (negative) and 1 (positive)
  */
 function analyzeSentiment(text: string): number {
+  // Guard against non-string inputs
+  if (typeof text !== 'string') {
+    console.error("Invalid text type for sentiment analysis:", typeof text);
+    return 0;
+  }
+  
   const positiveWords = [
     'good', 'great', 'excellent', 'positive', 'happy', 'joy', 'love', 'like', 'best', 'beautiful',
     'wonderful', 'amazing', 'fantastic', 'delightful', 'pleased', 'glad', 'cheerful', 'successful',
@@ -91,6 +119,17 @@ function getSentimentLabel(sentiment: number): string {
  * Simple bias detection
  */
 function detectBias(text: string): Record<string, number> {
+  // Guard against non-string inputs
+  if (typeof text !== 'string') {
+    console.error("Invalid text type for bias detection:", typeof text);
+    return {
+      gender: 0,
+      political: 0,
+      age: 0,
+      ethnicity: 0
+    };
+  }
+  
   const biasCategories = {
     gender: [
       'he', 'she', 'man', 'woman', 'male', 'female', 'boy', 'girl', 'masculine', 'feminine',

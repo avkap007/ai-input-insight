@@ -57,30 +57,46 @@ export const useMessages = (chatSessionId: string | null, documents: Document[])
       const { data } = response;
       console.log("Response received from generate-response function");
       
-      // Add analysis data
-      const sentiment = analyzeSentiment(data.content);
-      const bias = detectBias(data.content);
-      const trustScore = calculateTrustScore(
-        data.attributionData.baseKnowledge,
-        data.attributionData.documents
-      );
+      // Validate that we received a proper response with content
+      if (!data || !data.generated_text) {
+        console.error("Invalid response from generate-response:", data);
+        throw new Error("Invalid response from AI service");
+      }
       
-      const analysisData = {
-        sentiment,
-        bias,
-        trustScore
+      // Add analysis data - ensuring we have text to analyze
+      let analysisData = {
+        sentiment: 0,
+        bias: {},
+        trustScore: 50
       };
+      
+      if (typeof data.generated_text === 'string') {
+        const sentiment = analyzeSentiment(data.generated_text);
+        const bias = detectBias(data.generated_text);
+        const trustScore = calculateTrustScore(
+          data.attributionData?.baseKnowledge || 50,
+          data.attributionData?.documents || []
+        );
+        
+        analysisData = {
+          sentiment,
+          bias,
+          trustScore
+        };
+      } else {
+        console.warn("Generated text is not a string, skipping analysis");
+      }
       
       const assistantMessage: Omit<Message, 'id'> = {
         role: 'assistant',
-        content: data.content,
+        content: typeof data.generated_text === 'string' ? data.generated_text : String(data.generated_text),
         timestamp: new Date(),
       };
       
       const savedAssistantMessage = await saveMessage(chatSessionId, assistantMessage);
       
-      // Save attributions and attribution data to database
-      if (data.attributions && data.attributions.length > 0) {
+      // Save attributions and attribution data to database if they exist
+      if (data.attributions && Array.isArray(data.attributions) && data.attributions.length > 0) {
         console.log(`Saving ${data.attributions.length} attributions`);
         await saveTokenAttributions(savedAssistantMessage.id, data.attributions);
       }
@@ -91,8 +107,11 @@ export const useMessages = (chatSessionId: string | null, documents: Document[])
       }
       
       // Update the saved message with the additional data
-      savedAssistantMessage.attributions = data.attributions;
-      savedAssistantMessage.attributionData = data.attributionData;
+      savedAssistantMessage.attributions = data.attributions || [];
+      savedAssistantMessage.attributionData = data.attributionData || { 
+        baseKnowledge: 50, 
+        documents: [] 
+      };
       savedAssistantMessage.analysisData = analysisData;
       
       setMessages(prev => [...prev, savedAssistantMessage]);

@@ -15,6 +15,11 @@ serve(async (req) => {
 
   try {
     const { documents } = await req.json();
+    
+    if (!documents || !Array.isArray(documents)) {
+      throw new Error("Invalid request: documents array is required");
+    }
+    
     console.log(`Processing ${documents.length} documents for upload`);
     
     // In a real app, we would store these in a database
