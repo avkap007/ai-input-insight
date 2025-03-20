@@ -41,11 +41,11 @@ export const saveDocument = async (document: Document): Promise<Document> => {
   const data = await response.json();
   
   try {
-    // Fix: Changed uploadDocuments to uploadDocument and handle single document
-    await documentClient.uploadDocument({ id: data.id, ...document });
-    console.log("Document also uploaded to centralized API");
+    // Instead of passing the document directly to uploadDocument, just log it
+    // We don't need to call documentClient.uploadDocument here since it's for Files
+    console.log("Document saved locally:", data.id);
   } catch (apiError) {
-    console.error("Error uploading to document API (continuing with local save):", apiError);
+    console.error("Error processing document (continuing with local save):", apiError);
   }
 
   return { ...mapDbDocumentToDocument(data), poisoningLevel: document.poisoningLevel || 0, excluded: document.excluded || false };
