@@ -28,7 +28,8 @@ const InfluenceVisualization: React.FC<InfluenceVisualizationProps> = ({
   const getDocumentName = (documentId: string): string => {
     // This is a placeholder - in a real app, you would probably have a way to get 
     // the document name from its ID via a context or other mechanism
-    return documentId.substring(0, 8) + '...'; // Just showing first 8 chars of ID for now
+    const docIdPrefix = documentId.substring(0, 8);
+    return `Document ${docIdPrefix}...`; // Just showing first 8 chars of ID for now
   };
 
   return (

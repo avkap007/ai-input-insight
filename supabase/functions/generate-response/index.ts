@@ -56,7 +56,7 @@ serve(async (req) => {
     
     console.log(`Received query: "${query}" with ${documents.length} documents`);
 
-    // Always try to use the Anthropic API first
+    // Always try to use the Anthropic API
     try {
       console.log("Using Anthropic API for response generation");
       const response = await generateAnthropicResponse(query, documents);
@@ -287,6 +287,7 @@ Follow these important guidelines:
   }
 
   try {
+    console.log("API Key:", ANTHROPIC_API_KEY.substring(0, 5) + "...");
     console.log("Sending request to Anthropic API");
     
     // Make the request to Anthropic API using fetch
