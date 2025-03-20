@@ -68,6 +68,18 @@ export const saveDocument = async (document: Document): Promise<Document> => {
 
 // Delete a document
 export const deleteDocument = async (id: string): Promise<void> => {
+  // First, delete any related token attributions
+  const { error: attributionError } = await supabase
+    .from('token_attributions')
+    .delete()
+    .eq('document_id', id);
+  
+  if (attributionError) {
+    console.error("Error deleting related token attributions:", attributionError);
+    // Continue with document deletion even if attribution deletion fails
+  }
+  
+  // Now delete the document
   const { error } = await supabase
     .from('documents')
     .delete()
