@@ -1,45 +1,67 @@
+const API_BASE_URL = "http://127.0.0.1:8000";
 
-/**
- * Utility functions for making API calls to external services
- */
-
-// Document management API client
+// Document API Client
 export const documentClient = {
-  uploadDocuments: async (documents: any[]) => {
+  uploadDocument: async (file: File) => {
     try {
-      const response = await fetch('/api/upload-documents', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ documents })
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(`${API_BASE_URL}/upload-document`, {
+        method: "POST",
+        body: formData,
       });
 
       if (!response.ok) {
-        throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+        throw new Error("Upload failed");
       }
 
       return await response.json();
     } catch (error) {
-      console.error("Error uploading documents:", error);
+      console.error("Upload error:", error);
       throw error;
     }
-  }
-};
+  },
 
-// Response generation API client
+  updateDocumentInfluence: async (id: string, influenceScore: number) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/update-influence/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ influence: influenceScore }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Update failed");
+      }
+    } catch (error) {
+      console.error("Influence update error:", error);
+      throw error;
+    }
+  },
+
+  deleteDocument: async (id: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/delete-document/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Deletion failed");
+      }
+    } catch (error) {
+      console.error("Document deletion error:", error);
+      throw error;
+    }
+  },
+};
 export const responseClient = {
   generateResponse: async (query: string, documents: any[]) => {
     try {
-      const response = await fetch('/api/generate-response', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ 
-          query, 
-          documents 
-        })
+      const response = await fetch(`${API_BASE_URL}/generate-response`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, documents }),
       });
 
       if (!response.ok) {
@@ -53,59 +75,5 @@ export const responseClient = {
       console.error("Error generating response:", error);
       throw error;
     }
-  }
-};
-
-// Content analysis API client
-export const analysisClient = {
-  analyzeResponse: async (generatedText: string) => {
-    try {
-      const response = await fetch('/api/analyze-response', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ generated_text: generatedText })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Analysis failed: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      
-      // Transform the data to match our application's expected format
-      return {
-        sentiment: data.sentiment_value || 0,
-        bias: data.bias_indicators || {},
-        trustScore: data.trust_score / 100 || 0.5
-      };
-    } catch (error) {
-      console.error("Error analyzing response:", error);
-      throw error;
-    }
-  }
-};
-
-// Legacy implementation for content analysis
-// These are implemented locally in case the API is unavailable
-import { 
-  analyzeSentiment, 
-  detectBias, 
-  calculateTrustScore 
-} from './contentAnalysis';
-
-// Fallback content analysis client (local implementation)
-export const localAnalysisClient = {
-  analyzeSentiment: (text: string) => {
-    return analyzeSentiment(text);
   },
-  
-  detectBias: (text: string) => {
-    return detectBias(text);
-  },
-  
-  calculateTrustScore: (baseKnowledgePercentage: number, documentContributions: { contribution: number }[]) => {
-    return calculateTrustScore(baseKnowledgePercentage, documentContributions);
-  }
 };
