@@ -1,57 +1,92 @@
+
 import { useState, useEffect } from "react";
 import { Document } from "@/types";
 import { toast } from "@/components/ui/use-toast";
-
-const API_BASE_URL = "http://127.0.0.1:8000";
+import { documentClient } from "@/utils/apiClients";
+import { v4 as uuidv4 } from "uuid";
 
 export const useDocuments = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch documents from FastAPI on load
+  // Fetch documents from API on load
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/documents`);
-        if (!response.ok) throw new Error("Failed to fetch documents");
-        const data = await response.json();
-        setDocuments(data);
+        setIsLoading(true);
+        const response = await documentClient.getDocuments();
+        
+        // Map the API response to our Document type
+        const mappedDocuments = response.map((doc: any) => ({
+          id: doc.id,
+          name: doc.name,
+          type: doc.name.endsWith('.pdf') ? 'pdf' : 'text',
+          content: doc.content,
+          size: doc.size || undefined,
+          influenceScore: doc.influence_score || 0.5,
+          poisoningLevel: 0,
+          excluded: false
+        }));
+        
+        setDocuments(mappedDocuments);
       } catch (error) {
         console.error("Error fetching documents:", error);
         toast({ title: "Error", description: "Failed to load documents.", variant: "destructive" });
+      } finally {
+        setIsLoading(false);
       }
     };
+    
     fetchDocuments();
   }, []);
 
   // Handle document upload
   const handleDocumentUpload = async (file: File) => {
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await fetch(`${API_BASE_URL}/upload-document`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error("Upload failed");
-
-      const savedDocument = await response.json();
-      setDocuments((prev) => [...prev, savedDocument]);
-
+      const uploadedDoc = await documentClient.uploadDocument(file);
+      
+      // Map the API response to our Document type
+      const newDocument: Document = {
+        id: uploadedDoc.id || uuidv4(),
+        name: uploadedDoc.filename,
+        type: uploadedDoc.filename.endsWith('.pdf') ? 'pdf' : 'text',
+        content: uploadedDoc.content,
+        size: file.size,
+        influenceScore: 0.5, // Default influence
+        poisoningLevel: 0,
+        excluded: false
+      };
+      
+      setDocuments((prev) => [...prev, newDocument]);
       toast({ title: "Document uploaded", description: "Your document has been added successfully." });
+      
+      return newDocument;
     } catch (error) {
       console.error("Error uploading document:", error);
       toast({ title: "Upload failed", description: "Error saving document.", variant: "destructive" });
+      throw error;
+    }
+  };
+  
+  // Handle document direct text addition
+  const handleAddTextDocument = async (textContent: string, name?: string) => {
+    try {
+      // For text snippets, we create a file object and upload it
+      const blob = new Blob([textContent], { type: 'text/plain' });
+      const file = new File([blob], name || `Quote_${new Date().toISOString()}.txt`, { type: 'text/plain' });
+      
+      return await handleDocumentUpload(file);
+    } catch (error) {
+      console.error("Error adding text document:", error);
+      toast({ title: "Addition failed", description: "Error saving text.", variant: "destructive" });
+      throw error;
     }
   };
 
   // Handle document deletion
   const handleRemoveDocument = async (id: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/delete-document/${id}`, { method: "DELETE" });
-      if (!response.ok) throw new Error("Failed to delete document");
-
+      await documentClient.deleteDocument(id);
       setDocuments((prev) => prev.filter((doc) => doc.id !== id));
       toast({ title: "Document removed", description: "The document has been deleted." });
     } catch (error) {
@@ -63,30 +98,39 @@ export const useDocuments = () => {
   // Handle influence update
   const handleUpdateDocumentInfluence = async (id: string, influenceScore: number) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/update-influence/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ influence: influenceScore }),
-      });
-
-      if (!response.ok) throw new Error("Failed to update document influence");
-
+      await documentClient.updateDocumentInfluence(id, influenceScore);
       setDocuments((prev) =>
         prev.map((doc) => (doc.id === id ? { ...doc, influenceScore } : doc))
       );
-
       toast({ title: "Influence updated", description: `Influence set to ${Math.round(influenceScore * 100)}%` });
     } catch (error) {
       console.error("Error updating document influence:", error);
       toast({ title: "Update failed", description: "Error updating influence.", variant: "destructive" });
     }
   };
+  
+  // Update poisoning level (client-side only)
+  const handleUpdateDocumentPoisoning = (id: string, poisoningLevel: number) => {
+    setDocuments((prev) =>
+      prev.map((doc) => (doc.id === id ? { ...doc, poisoningLevel } : doc))
+    );
+  };
+  
+  // Update exclusion status (client-side only)
+  const handleUpdateDocumentExclusion = (id: string, excluded: boolean) => {
+    setDocuments((prev) =>
+      prev.map((doc) => (doc.id === id ? { ...doc, excluded } : doc))
+    );
+  };
 
   return {
     documents,
-    setDocuments,
+    isLoading,
     handleDocumentUpload,
+    handleAddTextDocument,
     handleRemoveDocument,
     handleUpdateDocumentInfluence,
+    handleUpdateDocumentPoisoning,
+    handleUpdateDocumentExclusion
   };
 };

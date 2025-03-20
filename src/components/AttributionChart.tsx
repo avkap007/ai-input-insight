@@ -1,70 +1,82 @@
 
-import React, { useEffect, useRef, useMemo } from 'react';
+import React from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { AttributionData } from '@/types';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface AttributionChartProps {
   data: AttributionData;
 }
 
-interface CustomTooltipProps {
-  active?: boolean;
-  payload?: any[];
-  label?: string;
-}
-
-const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white p-3 rounded-lg shadow-md border border-gray-100 text-xs">
-        <p className="font-medium">{payload[0].name}</p>
-        <p className="text-gray-700">{`${payload[0].value.toFixed(1)}% contribution`}</p>
-      </div>
-    );
-  }
-  return null;
-};
+const COLORS = ['#0088FE', '#FFBB28', '#FF8042', '#A28DFF', '#FF8A80', '#85D2C3'];
 
 const AttributionChart: React.FC<AttributionChartProps> = ({ data }) => {
-  const chartData = useMemo(() => {
-    const result = [
-      {
-        name: 'AI Base Knowledge',
-        value: data.baseKnowledge,
-        color: '#93c5fd' // blue-300
-      }
-    ];
-    
-    data.documents.forEach(doc => {
-      result.push({
-        name: doc.name,
-        value: doc.contribution,
-        color: '#fcd34d' // amber-300
-      });
-    });
-    
-    return result;
-  }, [data]);
+  if (!data) {
+    return null;
+  }
+
+  // Prepare data for the pie chart
+  const chartData = [
+    {
+      name: 'Model Base Knowledge',
+      value: data.baseKnowledge || 0,
+      color: '#0088FE'
+    },
+    ...data.documents.map((doc, index) => ({
+      name: doc.name || `Document ${index + 1}`,
+      value: doc.contribution || 0,
+      color: COLORS[(index + 1) % COLORS.length]
+    }))
+  ];
+
+  // Filter out any items with 0 value
+  const filteredData = chartData.filter(item => item.value > 0);
+
+  // If there's no meaningful data, don't render the chart
+  if (filteredData.length === 0) {
+    return null;
+  }
 
   return (
-    <div className="w-full h-44 mt-3 animate-fade-in">
-      <h3 className="text-sm font-medium mb-2">Source Attribution</h3>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={chartData}
-          layout="vertical"
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-        >
-          <XAxis type="number" domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
-          <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={100} />
-          <Tooltip content={<CustomTooltip />} />
-          <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-            {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} />
+    <div className="bg-white p-4 rounded-md shadow-sm">
+      <h3 className="text-sm font-medium mb-2 text-gray-700">Response Attribution</h3>
+      <div className="flex items-center justify-between">
+        <div className="w-2/3 h-48">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={filteredData}
+                innerRadius={60}
+                outerRadius={80}
+                paddingAngle={2}
+                dataKey="value"
+                label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                labelLine={false}
+              >
+                {filteredData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip
+                formatter={(value) => [`${value.toFixed(1)}%`, 'Contribution']}
+                labelFormatter={(index) => filteredData[index].name}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="w-1/3">
+          <div className="space-y-1.5">
+            {filteredData.map((entry, index) => (
+              <div key={index} className="flex items-center text-xs">
+                <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: entry.color }}></div>
+                <div className="truncate flex-1" title={entry.name}>
+                  {entry.name.length > 20 ? `${entry.name.substring(0, 18)}...` : entry.name}
+                </div>
+                <div className="font-medium ml-1">{entry.value.toFixed(1)}%</div>
+              </div>
             ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
