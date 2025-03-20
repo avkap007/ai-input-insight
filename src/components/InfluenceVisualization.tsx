@@ -24,6 +24,13 @@ const InfluenceVisualization: React.FC<InfluenceVisualizationProps> = ({
     setHighlightMode(mode);
   };
 
+  // Find a document name from its ID (used in tooltip)
+  const getDocumentName = (documentId: string): string => {
+    // This is a placeholder - in a real app, you would probably have a way to get 
+    // the document name from its ID via a context or other mechanism
+    return documentId.substring(0, 8) + '...'; // Just showing first 8 chars of ID for now
+  };
+
   return (
     <div className="text-gray-700 leading-relaxed">
       <div className="mb-3 flex flex-col">
@@ -100,7 +107,9 @@ const InfluenceVisualization: React.FC<InfluenceVisualizationProps> = ({
                       <div className="space-y-1">
                         <p className="text-sm font-medium">Document Influenced</p>
                         <p className="text-xs text-gray-500">
-                          This content is influenced by your uploaded document: {attribution.documentId}.
+                          This content is influenced by your uploaded document: {
+                            attribution.documentId ? getDocumentName(attribution.documentId) : "Unknown"
+                          }
                         </p>
                         <p className="text-xs text-amber-600">Confidence: {Math.round(attribution.confidence * 100)}%</p>
                       </div>

@@ -172,7 +172,7 @@ function computeTokenAttribution(
   const docInfluenceMap: Record<string, number> = {};
   documents.forEach(doc => {
     if (!doc.excluded) {
-      docInfluenceMap[doc.id] = doc.influenceScore || 0;
+      docInfluenceMap[doc.id] = doc.influenceScore || 0.5; // Default to 0.5 if not set
     }
   });
   
@@ -207,7 +207,7 @@ function computeTokenAttribution(
       let bestScore = 0;
       
       Object.entries(docMatches).forEach(([docId, matches]) => {
-        const score = matches * (docInfluenceMap[docId] || 0);
+        const score = matches * (docInfluenceMap[docId] || 0.5);
         if (score > bestScore) {
           bestScore = score;
           bestDocId = docId;
@@ -215,7 +215,7 @@ function computeTokenAttribution(
       });
       
       // If the document influence is very low, still attribute to base knowledge
-      if (docInfluenceMap[bestDocId] < 0.1) {
+      if ((docInfluenceMap[bestDocId] || 0) < 0.1) {
         attributions.push({
           text: sentence + ' ',
           source: 'base',
@@ -227,7 +227,7 @@ function computeTokenAttribution(
           text: sentence + ' ',
           source: 'document',
           documentId: bestDocId,
-          confidence: Math.min(0.95, 0.6 + (totalMatches / 5) * (docInfluenceMap[bestDocId] || 0))
+          confidence: Math.min(0.95, 0.6 + (totalMatches / 5) * (docInfluenceMap[bestDocId] || 0.5))
         });
       }
     }
@@ -273,11 +273,11 @@ Follow these important guidelines:
   userPrompt += `Please provide a response based on these documents (with their influence scores):\n\n`;
 
   // Sort documents by influence weight
-  activeDocuments.sort((a, b) => (b.influenceScore || 0) - (a.influenceScore || 0));
+  activeDocuments.sort((a, b) => (b.influenceScore || 0.5) - (a.influenceScore || 0.5));
 
   // Include document content with influence scores
   for (const doc of activeDocuments) {
-    const influencePercent = Math.round(((doc.influenceScore || 0)) * 100);
+    const influencePercent = Math.round(((doc.influenceScore || 0.5)) * 100);
     userPrompt += `\n--- DOCUMENT: "${doc.name}" (Influence: ${influencePercent}%) ---\n`;
     
     // Add content either original or poisoned
@@ -413,11 +413,11 @@ async function generateMockResponse(query: string, documents: Document[]): Promi
   mockContent += "Based on the documents you've provided, I can tell you that:\n\n";
   
   // Sort documents by influence score
-  activeDocuments.sort((a, b) => (b.influenceScore || 0) - (a.influenceScore || 0));
+  activeDocuments.sort((a, b) => (b.influenceScore || 0.5) - (a.influenceScore || 0.5));
   
   // Add snippets from each document based on influence
   for (const doc of activeDocuments) {
-    if (doc.influenceScore && doc.influenceScore > 0.1) {
+    if ((doc.influenceScore || 0.5) > 0.1) {
       // Extract a snippet from the document
       const snippet = doc.content.split(/\.\s+/).slice(0, 2).join('. ') + '.';
       mockContent += `From ${doc.name}: "${snippet}"\n\n`;
@@ -479,7 +479,7 @@ async function generateMockResponse(query: string, documents: Document[]): Promi
   // Calculate attribution data
   const docContributions: Record<string, number> = {};
   activeDocuments.forEach(doc => {
-    const influencePercent = Math.round(((doc.influenceScore || 0)) * 100);
+    const influencePercent = Math.round(((doc.influenceScore || 0.5)) * 100);
     if (influencePercent > 0) {
       docContributions[doc.id] = influencePercent;
     }
@@ -494,11 +494,11 @@ async function generateMockResponse(query: string, documents: Document[]): Promi
     attributionData: {
       baseKnowledge: baseKnowledge,
       documents: activeDocuments
-        .filter(doc => (doc.influenceScore || 0) > 0)
+        .filter(doc => (doc.influenceScore || 0.5) > 0)
         .map(doc => ({
           id: doc.id,
           name: doc.name,
-          contribution: Math.round(((doc.influenceScore || 0)) * 100),
+          contribution: Math.round(((doc.influenceScore || 0.5)) * 100),
         })),
     },
   };

@@ -12,12 +12,18 @@ export const useDocuments = (initialDocuments: Document[] = []) => {
       // Add advanced properties
       const documentWithAdvancedProps: Document = {
         ...document,
+        influenceScore: 0.5, // Default to 50% influence
         poisoningLevel: 0,
         excluded: false
       };
       
       const savedDocument = await saveDocument(documentWithAdvancedProps);
       setDocuments(prev => [...prev, savedDocument]);
+      
+      toast({
+        title: "Document uploaded",
+        description: "Your document has been added successfully.",
+      });
     } catch (error) {
       console.error("Error uploading document:", error);
       toast({
