@@ -16,8 +16,8 @@ const InfluenceVisualization: React.FC<InfluenceVisualizationProps> = ({
   const [highlightMode, setHighlightMode] = useState<'all' | 'document' | 'base'>('all');
 
   // If we don't have attributions yet, show the raw message
-  if (!attributions.length) {
-    return <p className="text-gray-700 leading-relaxed">{message}</p>;
+  if (!attributions || !attributions.length) {
+    return <p className="text-gray-700 leading-relaxed whitespace-pre-line">{message}</p>;
   }
 
   const toggleHighlightMode = (mode: 'all' | 'document' | 'base') => {
@@ -63,11 +63,11 @@ const InfluenceVisualization: React.FC<InfluenceVisualizationProps> = ({
         </p>
       </div>
       
-      <div>
-        {attributions.map((token, index) => {
+      <div className="whitespace-pre-line">
+        {attributions.map((attribution, index) => {
           // Skip rendering if it doesn't match the current highlight mode
-          if (highlightMode !== 'all' && token.source !== highlightMode) {
-            return <span key={index}>{token.text}</span>;
+          if (highlightMode !== 'all' && attribution.source !== highlightMode) {
+            return <span key={index}>{attribution.text}</span>;
           }
           
           return (
@@ -77,32 +77,32 @@ const InfluenceVisualization: React.FC<InfluenceVisualizationProps> = ({
                   <span 
                     className={cn(
                       "inline transition-colors cursor-pointer",
-                      token.source === 'base' 
+                      attribution.source === 'base' 
                         ? 'highlight-base bg-blue-50 hover:bg-blue-100' 
                         : 'highlight-document bg-amber-50 hover:bg-amber-100'
                     )}
                   >
-                    {token.text}
+                    {attribution.text}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="px-3 py-2 bg-white">
-                  {token.source === 'base' 
+                  {attribution.source === 'base' 
                     ? (
                       <div className="space-y-1">
                         <p className="text-sm font-medium">AI Base Knowledge</p>
                         <p className="text-xs text-gray-500">
                           This content comes from the AI's general training, not from your specific documents.
                         </p>
-                        <p className="text-xs text-blue-600">Confidence: {Math.round(token.confidence * 100)}%</p>
+                        <p className="text-xs text-blue-600">Confidence: {Math.round(attribution.confidence * 100)}%</p>
                       </div>
                     )
                     : (
                       <div className="space-y-1">
                         <p className="text-sm font-medium">Document Influenced</p>
                         <p className="text-xs text-gray-500">
-                          This content is influenced by your uploaded document: {token.documentId}.
+                          This content is influenced by your uploaded document: {attribution.documentId}.
                         </p>
-                        <p className="text-xs text-amber-600">Confidence: {Math.round(token.confidence * 100)}%</p>
+                        <p className="text-xs text-amber-600">Confidence: {Math.round(attribution.confidence * 100)}%</p>
                       </div>
                     )}
                 </TooltipContent>
