@@ -56,14 +56,7 @@ serve(async (req) => {
     
     console.log(`Received query: "${query}" with ${documents.length} documents`);
 
-    if (!ANTHROPIC_API_KEY) {
-      console.log("Anthropic API key not found, using mock response");
-      const response = await generateMockResponse(query, documents);
-      return new Response(JSON.stringify(response), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
+    // Always try to use the Anthropic API first
     try {
       console.log("Using Anthropic API for response generation");
       const response = await generateAnthropicResponse(query, documents);
@@ -72,6 +65,7 @@ serve(async (req) => {
       });
     } catch (anthropicError) {
       console.error("Error with Anthropic API:", anthropicError);
+      console.log("Falling back to mock response");
       const response = await generateMockResponse(query, documents);
       return new Response(JSON.stringify(response), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -295,7 +289,7 @@ Follow these important guidelines:
   try {
     console.log("Sending request to Anthropic API");
     
-    // Make the request to Anthropic API using fetch instead of the Claude API module
+    // Make the request to Anthropic API using fetch
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
