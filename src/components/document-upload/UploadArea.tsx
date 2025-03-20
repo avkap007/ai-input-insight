@@ -1,13 +1,12 @@
-
-import React, { useState } from 'react';
-import { useToast } from '@/components/ui/use-toast';
-import { Document } from '@/types';
-import DropZone from './DropZone';
-import UploadProgress from './UploadProgress';
-import { isFileSizeValid, createDocumentFromTextFile, createDocumentFromPdfFile } from '@/utils/fileProcessing';
+import React, { useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
+import { documentClient } from "@/utils/apiClients"; // Ensure this exists
+import DropZone from "./DropZone";
+import UploadProgress from "./UploadProgress";
+import { isFileSizeValid } from "@/utils/fileProcessing"; // Ensure this exists
 
 interface UploadAreaProps {
-  onDocumentUpload: (document: Document) => void;
+  onDocumentUpload: (document: any) => void;
 }
 
 const UploadArea: React.FC<UploadAreaProps> = ({ onDocumentUpload }) => {
@@ -27,7 +26,7 @@ const UploadArea: React.FC<UploadAreaProps> = ({ onDocumentUpload }) => {
   const simulateUploadProgress = (callback: () => void) => {
     setUploadingProgress(0);
     const interval = setInterval(() => {
-      setUploadingProgress(prev => {
+      setUploadingProgress((prev) => {
         if (prev === null) return 0;
         if (prev >= 100) {
           clearInterval(interval);
@@ -37,99 +36,51 @@ const UploadArea: React.FC<UploadAreaProps> = ({ onDocumentUpload }) => {
         return prev + 10;
       });
     }, 100);
-    
-    return interval;
   };
 
-  const processFile = (file: File) => {
-    setUploadingProgress(0);
-    
-    // Check file size
+  const processFile = async (file: File) => {
     if (!isFileSizeValid(file.size)) {
       toast({
         title: "File too large",
-        description: "Maximum file size is 5MB. Please upload a smaller file.",
+        description: "Maximum file size is 5MB.",
         variant: "destructive",
       });
-      setUploadingProgress(null);
       return;
     }
-    
-    if (file.name.endsWith('.pdf')) {
-      // Process PDF files
-      const reader = new FileReader();
-      
-      reader.onload = (event) => {
-        const interval = simulateUploadProgress(() => {
-          const content = event.target?.result as string;
-          const newDocument = createDocumentFromPdfFile(file, content);
-          
-          onDocumentUpload(newDocument);
-          
-          toast({
-            title: "Document uploaded",
-            description: `${file.name} has been added to your sources.`,
-          });
-        });
-      };
-      
-      reader.onerror = () => {
-        setUploadingProgress(null);
-        toast({
-          title: "Upload failed",
-          description: "There was an error processing your document.",
-          variant: "destructive",
-        });
-      };
-      
-      // Read as data URL (base64 encoded) for PDFs
-      reader.readAsDataURL(file);
-    } else {
-      // Process text files
-      const reader = new FileReader();
-      
-      reader.onload = (event) => {
-        const content = event.target?.result as string;
-        
-        const interval = simulateUploadProgress(() => {
-          const newDocument = createDocumentFromTextFile(file, content);
-          
-          onDocumentUpload(newDocument);
-          
-          toast({
-            title: "Document uploaded",
-            description: `${file.name} has been added to your sources.`,
-          });
-        });
-      };
-      
-      reader.onerror = () => {
-        setUploadingProgress(null);
-        toast({
-          title: "Upload failed",
-          description: "There was an error processing your document.",
-          variant: "destructive",
-        });
-      };
-      
-      reader.readAsText(file);
+
+    try {
+      setUploadingProgress(0);
+      simulateUploadProgress(() => setUploadingProgress(null));
+
+      // Upload document to FastAPI
+      const uploadedDocument = await documentClient.uploadDocument(file);
+      onDocumentUpload(uploadedDocument);
+
+      toast({
+        title: "Document uploaded",
+        description: `${file.name} has been uploaded.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description: "There was an error uploading your document.",
+        variant: "destructive",
+      });
     }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
+
     if (e.dataTransfer.files.length > 0) {
-      const file = e.dataTransfer.files[0];
-      processFile(file);
+      processFile(e.dataTransfer.files[0]);
     }
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      processFile(file);
+      processFile(e.target.files[0]);
     }
   };
 
@@ -142,9 +93,7 @@ const UploadArea: React.FC<UploadAreaProps> = ({ onDocumentUpload }) => {
         onDrop={handleDrop}
         onFileInputChange={handleFileInput}
       />
-      {uploadingProgress !== null && (
-        <UploadProgress progress={uploadingProgress} />
-      )}
+      {uploadingProgress !== null && <UploadProgress progress={uploadingProgress} />}
     </div>
   );
 };

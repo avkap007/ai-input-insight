@@ -1,179 +1,99 @@
-
-import { supabase } from "@/integrations/supabase/client";
 import { Message, AttributionData, TokenAttribution } from "@/types";
-import { DbMessage, DbChatSession, DbAttributionData, DbTokenAttribution } from "@/lib/supabase-types";
 
 // Create a new chat session
 export const createChatSession = async (title?: string): Promise<string> => {
-  const { data, error } = await supabase
-    .from('chat_sessions')
-    .insert([{ title: title || 'New Chat' }])
-    .select()
-    .single();
-  
-  if (error) {
-    console.error("Error creating chat session:", error);
-    throw error;
-  }
-  
-  return (data as DbChatSession).id;
-};
+  const response = await fetch("/api/chat/sessions", {
+    method: "POST",
+    body: JSON.stringify({ title: title || "New Chat" }),
+    headers: { "Content-Type": "application/json" },
+  });
 
-// Convert database message to application message
-export const mapDbMessageToMessage = (dbMessage: DbMessage): Message => {
-  return {
-    id: dbMessage.id,
-    role: dbMessage.role,
-    content: dbMessage.content,
-    timestamp: new Date(dbMessage.timestamp),
-  };
+  if (!response.ok) {
+    throw new Error("Error creating chat session");
+  }
+
+  const data = await response.json();
+  return data.id;
 };
 
 // Get all messages for a chat session
 export const getMessages = async (chatSessionId: string): Promise<Message[]> => {
-  const { data, error } = await supabase
-    .from('messages')
-    .select('*')
-    .eq('chat_session_id', chatSessionId)
-    .order('timestamp', { ascending: true });
-  
-  if (error) {
-    console.error(`Error fetching messages for chat session ${chatSessionId}:`, error);
-    throw error;
+  const response = await fetch(`/api/chat/messages?chatSessionId=${chatSessionId}`);
+  if (!response.ok) {
+    throw new Error("Error fetching messages");
   }
-  
-  return (data as DbMessage[]).map(mapDbMessageToMessage);
+  return await response.json();
 };
 
 // Save a message
-export const saveMessage = async (
-  chatSessionId: string,
-  message: Omit<Message, 'id'>
-): Promise<Message> => {
-  const { data, error } = await supabase
-    .from('messages')
-    .insert([{
-      chat_session_id: chatSessionId,
+export const saveMessage = async (chatSessionId: string, message: Omit<Message, "id">): Promise<Message> => {
+  const response = await fetch("/api/chat/messages", {
+    method: "POST",
+    body: JSON.stringify({
+      chatSessionId,
       role: message.role,
       content: message.content,
       timestamp: message.timestamp.toISOString(),
-    }])
-    .select()
-    .single();
-  
-  if (error) {
-    console.error("Error saving message:", error);
-    throw error;
+    }),
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) {
+    throw new Error("Error saving message");
   }
-  
-  return mapDbMessageToMessage(data as DbMessage);
+
+  return await response.json();
 };
 
 // Save token attributions for a message
-export const saveTokenAttributions = async (
-  messageId: string,
-  attributions: TokenAttribution[]
-): Promise<void> => {
-  try {
-    if (!attributions || attributions.length === 0) {
-      console.log(`No attributions to save for message ${messageId}`);
-      return;
-    }
-    
-    console.log(`Saving ${attributions.length} token attributions for message ${messageId}`);
-    
-    const dbAttributions = attributions.map(attribution => ({
-      message_id: messageId,
-      text: attribution.text,
-      source: attribution.source,
-      document_id: attribution.documentId || null,
-      confidence: attribution.confidence,
-    }));
-    
-    const { error } = await supabase
-      .from('token_attributions')
-      .insert(dbAttributions);
-    
-    if (error) {
-      console.error("Error saving token attributions:", error);
-      throw error;
-    }
-    
-    console.log(`Successfully saved attributions for message ${messageId}`);
-  } catch (error) {
-    console.error(`Error in saveTokenAttributions for message ${messageId}:`, error);
-    throw error;
+export const saveTokenAttributions = async (messageId: string, attributions: TokenAttribution[]): Promise<void> => {
+  if (!attributions || attributions.length === 0) {
+    console.log(`No attributions to save for message ${messageId}`);
+    return;
+  }
+
+  console.log(`Saving ${attributions.length} token attributions for message ${messageId}`);
+
+  const response = await fetch("/api/chat/token-attributions", {
+    method: "POST",
+    body: JSON.stringify({ messageId, attributions }),
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) {
+    throw new Error("Error saving token attributions");
   }
 };
 
 // Save attribution data for a message
-export const saveAttributionData = async (
-  messageId: string,
-  attributionData: AttributionData
-): Promise<void> => {
-  try {
-    console.log(`Saving attribution data for message ${messageId}:`, attributionData);
-    
-    const { error } = await supabase
-      .from('attribution_data')
-      .insert([{
-        message_id: messageId,
-        base_knowledge_percentage: attributionData.baseKnowledge,
-        document_contributions: attributionData.documents,
-      }]);
-    
-    if (error) {
-      console.error("Error saving attribution data:", error);
-      throw error;
-    }
-    
-    console.log(`Successfully saved attribution data for message ${messageId}`);
-  } catch (error) {
-    console.error(`Error in saveAttributionData for message ${messageId}:`, error);
-    throw error;
+export const saveAttributionData = async (messageId: string, attributionData: AttributionData): Promise<void> => {
+  console.log(`Saving attribution data for message ${messageId}:`, attributionData);
+
+  const response = await fetch("/api/chat/attribution-data", {
+    method: "POST",
+    body: JSON.stringify({ messageId, attributionData }),
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) {
+    throw new Error("Error saving attribution data");
   }
 };
 
 // Get token attributions for a message
 export const getTokenAttributions = async (messageId: string): Promise<TokenAttribution[]> => {
-  const { data, error } = await supabase
-    .from('token_attributions')
-    .select('*')
-    .eq('message_id', messageId);
-  
-  if (error) {
-    console.error(`Error fetching token attributions for message ${messageId}:`, error);
-    throw error;
+  const response = await fetch(`/api/chat/token-attributions?messageId=${messageId}`);
+  if (!response.ok) {
+    throw new Error("Error fetching token attributions");
   }
-  
-  return (data as DbTokenAttribution[]).map(dbAttribution => ({
-    text: dbAttribution.text,
-    source: dbAttribution.source,
-    documentId: dbAttribution.document_id || undefined,
-    confidence: dbAttribution.confidence,
-  }));
+  return await response.json();
 };
 
 // Get attribution data for a message
 export const getAttributionData = async (messageId: string): Promise<AttributionData | null> => {
-  const { data, error } = await supabase
-    .from('attribution_data')
-    .select('*')
-    .eq('message_id', messageId)
-    .single();
-  
-  if (error) {
-    if (error.code === 'PGRST116') {
-      // No data found
-      return null;
-    }
-    console.error(`Error fetching attribution data for message ${messageId}:`, error);
-    throw error;
+  const response = await fetch(`/api/chat/attribution-data?messageId=${messageId}`);
+  if (!response.ok) {
+    return null;
   }
-  
-  const dbAttributionData = data as DbAttributionData;
-  return {
-    baseKnowledge: dbAttributionData.base_knowledge_percentage,
-    documents: dbAttributionData.document_contributions,
-  };
+  return await response.json();
 };
