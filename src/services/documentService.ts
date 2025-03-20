@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Document } from "@/types";
 import { DbDocument } from "@/lib/supabase-types";
+import { documentClient } from "@/utils/apiClients";
 
 // Convert database document to application document
 export const mapDbDocumentToDocument = (dbDocument: DbDocument): Document => {
@@ -45,6 +46,7 @@ export const getDocuments = async (): Promise<Document[]> => {
 
 // Save a document
 export const saveDocument = async (document: Document): Promise<Document> => {
+  // First, save to local Supabase database
   const dbDocument = mapDocumentToDbDocument(document);
   
   const { data, error } = await supabase
@@ -54,8 +56,26 @@ export const saveDocument = async (document: Document): Promise<Document> => {
     .single();
   
   if (error) {
-    console.error("Error saving document:", error);
+    console.error("Error saving document to local database:", error);
     throw error;
+  }
+  
+  // Also upload to the centralized document API
+  try {
+    // Transform for the API format
+    const apiDocument = {
+      id: data.id,
+      name: document.name,
+      content: document.content,
+      influence: document.influenceScore || 0.5
+    };
+    
+    // Upload to the document API
+    await documentClient.uploadDocuments([apiDocument]);
+    console.log("Document also uploaded to centralized API");
+  } catch (apiError) {
+    console.error("Error uploading to document API (continuing with local save):", apiError);
+    // We'll continue even if the API upload fails, since we have the document locally
   }
   
   // Return the document with client-side properties

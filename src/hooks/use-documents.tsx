@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Document } from '@/types';
 import { toast } from '@/components/ui/use-toast';
 import { saveDocument, deleteDocument, updateDocumentInfluence } from '@/services/documentService';
+import { documentClient } from '@/utils/apiClients';
 
 export const useDocuments = (initialDocuments: Document[] = []) => {
   const [documents, setDocuments] = useState<Document[]>(initialDocuments);
@@ -96,6 +97,31 @@ export const useDocuments = (initialDocuments: Document[] = []) => {
     });
   };
 
+  // Sync documents with the document API
+  const syncDocumentsWithAPI = async () => {
+    try {
+      const activeDocuments = documents.filter(doc => !doc.excluded).map(doc => ({
+        id: doc.id,
+        name: doc.name,
+        content: doc.content,
+        influence: doc.influenceScore || 0.5
+      }));
+      
+      await documentClient.uploadDocuments(activeDocuments);
+      toast({
+        title: "Documents synced",
+        description: `Successfully synced ${activeDocuments.length} documents with the API.`,
+      });
+    } catch (error) {
+      console.error("Error syncing documents with API:", error);
+      toast({
+        title: "Sync failed",
+        description: "There was an error syncing documents with the API.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     documents,
     setDocuments,
@@ -103,6 +129,7 @@ export const useDocuments = (initialDocuments: Document[] = []) => {
     handleRemoveDocument,
     handleUpdateDocumentInfluence,
     handleUpdateDocumentPoisoning,
-    handleUpdateDocumentExclusion
+    handleUpdateDocumentExclusion,
+    syncDocumentsWithAPI
   };
 };

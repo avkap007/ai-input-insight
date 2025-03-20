@@ -3,64 +3,109 @@
  * Utility functions for making API calls to external services
  */
 
-// Anthropic API client for Claude AI
-export const anthropicClient = {
-  generateResponse: async (
-    apiKey: string,
-    messages: { role: string; content: string }[],
-    systemPrompt: string
-  ) => {
+// Document management API client
+export const documentClient = {
+  uploadDocuments: async (documents: any[]) => {
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/upload-documents', {
         method: 'POST',
         headers: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          model: 'claude-3-sonnet-20240229',
-          system: systemPrompt,
-          messages: messages,
-          max_tokens: 1000
-        })
+        body: JSON.stringify({ documents })
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Anthropic API error: ${response.status} ${response.statusText}`, errorText);
-        throw new Error(`Anthropic API error: ${response.status} ${response.statusText}`);
+        throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
       }
 
       return await response.json();
     } catch (error) {
-      console.error("Error calling Anthropic API:", error);
+      console.error("Error uploading documents:", error);
       throw error;
     }
   }
 };
 
-// Content analysis client
-export const analysisClient = {
-  analyzeSentiment: (text: string) => {
-    // Implementation from contentAnalysis.ts
-    return analyzeSentiment(text);
-  },
-  
-  detectBias: (text: string) => {
-    // Implementation from contentAnalysis.ts
-    return detectBias(text);
-  },
-  
-  calculateTrustScore: (baseKnowledgePercentage: number, documentContributions: { contribution: number }[]) => {
-    // Implementation from contentAnalysis.ts
-    return calculateTrustScore(baseKnowledgePercentage, documentContributions);
+// Response generation API client
+export const responseClient = {
+  generateResponse: async (query: string, documents: any[]) => {
+    try {
+      const response = await fetch('/api/generate-response', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          query, 
+          documents 
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Response generation failed: ${response.status} ${response.statusText}`, errorText);
+        throw new Error(`Response generation failed: ${response.status} ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error generating response:", error);
+      throw error;
+    }
   }
 };
 
-// Import the local implementations for content analysis
+// Content analysis API client
+export const analysisClient = {
+  analyzeResponse: async (generatedText: string) => {
+    try {
+      const response = await fetch('/api/analyze-response', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ generated_text: generatedText })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Analysis failed: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      // Transform the data to match our application's expected format
+      return {
+        sentiment: data.sentiment_value || 0,
+        bias: data.bias_indicators || {},
+        trustScore: data.trust_score / 100 || 0.5
+      };
+    } catch (error) {
+      console.error("Error analyzing response:", error);
+      throw error;
+    }
+  }
+};
+
+// Legacy implementation for content analysis
+// These are implemented locally in case the API is unavailable
 import { 
   analyzeSentiment, 
   detectBias, 
   calculateTrustScore 
 } from './contentAnalysis';
+
+// Fallback content analysis client (local implementation)
+export const localAnalysisClient = {
+  analyzeSentiment: (text: string) => {
+    return analyzeSentiment(text);
+  },
+  
+  detectBias: (text: string) => {
+    return detectBias(text);
+  },
+  
+  calculateTrustScore: (baseKnowledgePercentage: number, documentContributions: { contribution: number }[]) => {
+    return calculateTrustScore(baseKnowledgePercentage, documentContributions);
+  }
+};
