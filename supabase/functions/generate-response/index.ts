@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.199.0/http/server.ts";
-import { createCompletion } from "https://deno.land/x/claude_api@v1.0.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -238,7 +237,7 @@ function computeTokenAttribution(
 }
 
 /**
- * Calls Claude API with structured response draft.
+ * Calls Anthropic API directly with structured response draft.
  */
 async function generateAnthropicResponse(query: string, documents: Document[]): Promise<ResponsePayload> {
   const activeDocuments = documents.filter(doc => !doc.excluded);
@@ -296,7 +295,7 @@ Follow these important guidelines:
   try {
     console.log("Sending request to Anthropic API");
     
-    // Make the request to Claude API
+    // Make the request to Anthropic API using fetch instead of the Claude API module
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
