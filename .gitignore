@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+fastapi-env/
+__pycache__/
+database.db

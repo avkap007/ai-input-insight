@@ -1,0 +1,10 @@
+# Ignore dev-only and large files
+node_modules/
+fastapi-env/
+*.log
+logs/
+__pycache__/
+*.sqlite
+database.db
+.vscode/
+.DS_Store
