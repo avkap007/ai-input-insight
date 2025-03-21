@@ -45,10 +45,11 @@ export const documentClient = {
     }
   },
 
-  // Delete a document
+  // Delete a document - Fixed to use the correct endpoint
   deleteDocument: async (id: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
+      // Use /delete-document/:id instead of /documents/:id
+      const response = await fetch(`${API_BASE_URL}/delete-document/${id}`, {
         method: "DELETE",
       });
 
@@ -63,16 +64,17 @@ export const documentClient = {
     }
   },
 
-  // Update document influence score
+  // Update document influence score - Fixed to use the correct endpoint
   updateDocumentInfluence: async (id: string, influenceScore: number) => {
     try {
       console.log(`Making API call to update document ${id} influence to ${influenceScore}`);
-      const response = await fetch(`${API_BASE_URL}/documents/${id}/influence`, {
+      // Use /update-influence/:id instead of /documents/:id/influence
+      const response = await fetch(`${API_BASE_URL}/update-influence/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ influence_score: influenceScore }),
+        body: JSON.stringify({ influence: influenceScore }),
       });
 
       if (!response.ok) {
@@ -94,19 +96,20 @@ export const responseClient = {
   // Generate a response based on documents
   generateResponse: async (prompt: string, documents: Document[]) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/generate-response`, {
+      const response = await fetch(`${API_BASE_URL}/generate-response`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          prompt,
+          query: prompt, // Changed from 'prompt' to 'query' to match backend
           documents: documents.map(doc => ({
             id: doc.id,
             content: doc.content,
             name: doc.name,
-            influence_score: doc.influenceScore,
-            poisoning_level: doc.poisoningLevel || 0
+            influence: doc.influenceScore, // Changed from influence_score to match backend
+            poisoning_level: doc.poisoningLevel || 0,
+            excluded: doc.excluded || false
           })),
         }),
       });
@@ -130,7 +133,7 @@ export const analysisClient = {
   // Analyze sentiment of text
   analyzeSentiment: async (text: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/analyze-sentiment`, {
+      const response = await fetch(`${API_BASE_URL}/analyze-sentiment`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -153,7 +156,7 @@ export const analysisClient = {
   // Detect bias in text
   detectBias: async (text: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/detect-bias`, {
+      const response = await fetch(`${API_BASE_URL}/detect-bias`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -178,14 +181,14 @@ export const analysisClient = {
     documentContributions: { id: string; name: string; contribution: number }[]
   ) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/calculate-trust-score`, {
+      const response = await fetch(`${API_BASE_URL}/calculate-trust-score`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          base_knowledge_percentage: baseKnowledgePercentage,
-          document_contributions: documentContributions,
+          baseKnowledgePercentage: baseKnowledgePercentage,
+          documentContributions: documentContributions,
         }),
       });
 

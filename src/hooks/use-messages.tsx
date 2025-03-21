@@ -70,9 +70,9 @@ export const useMessages = (chatSessionId: string | null) => {
       }));
       
       // If we have real attribution data, process it
-      if (response.attribution_data) {
-        baseKnowledgePercentage = response.attribution_data.base_knowledge_percentage || 40;
-        documentContributions = response.attribution_data.document_contributions || documentContributions;
+      if (response.attributionData) {
+        baseKnowledgePercentage = response.attributionData.baseKnowledge || 40;
+        documentContributions = response.attributionData.documents || documentContributions;
       }
       
       const attributionData: AttributionData = {
