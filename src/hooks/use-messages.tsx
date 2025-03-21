@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Message, Document, TokenAttribution, AttributionData, AnalysisData } from '@/types';
 import { saveMessage, getMessages } from '@/services/chatService';
 import { responseClient, analysisClient } from '@/utils/apiClients';
@@ -20,6 +20,13 @@ export const useMessages = (chatSessionId: string | null) => {
       console.error('Error loading messages:', error);
     }
   }, [chatSessionId]);
+
+  // Load messages when chatSessionId changes
+  useEffect(() => {
+    if (chatSessionId) {
+      loadMessages();
+    }
+  }, [chatSessionId, loadMessages]);
 
   // Send a new message and get AI response
   const handleSendMessage = useCallback(async (content: string, documents: Document[]) => {
@@ -65,23 +72,19 @@ export const useMessages = (chatSessionId: string | null) => {
       
       try {
         // Get sentiment analysis
-        const sentimentResponse = await analysisClient.analyzeSentiment(generatedText);
-        const sentiment = sentimentResponse?.sentiment_score || 0;
+        const sentiment = await analysisClient.analyzeSentiment(generatedText);
         
         // Get bias analysis
-        const biasResponse = await analysisClient.detectBias(generatedText);
-        const bias = biasResponse?.bias_scores || { political: 0.2, gender: 0.1 };
+        const bias = await analysisClient.detectBias(generatedText);
         
         // Calculate trust score
         const baseKnowledgePercentage = attributionData.baseKnowledge;
         const documentContributions = attributionData.documents;
         
-        const trustResponse = await analysisClient.calculateTrustScore(
+        const trustScore = await analysisClient.calculateTrustScore(
           baseKnowledgePercentage,
           documentContributions
         );
-        
-        const trustScore = trustResponse?.trust_score || 0.5;
         
         // Combine all analysis data
         analysisData = {

@@ -33,13 +33,6 @@ const DocumentItem: React.FC<DocumentItemProps> = ({
     return `${Math.round(mb * 10) / 10} MB`;
   };
 
-  const getIcon = () => {
-    if (type === 'pdf') {
-      return <i className="fas fa-file-pdf text-red-500 mr-2"></i>;
-    }
-    return <i className="fas fa-file-alt text-blue-500 mr-2"></i>;
-  };
-
   return (
     <div className={cn(
       "bg-white rounded-lg border border-gray-200 shadow-sm p-3 transition-all",
@@ -89,7 +82,7 @@ const DocumentItem: React.FC<DocumentItemProps> = ({
             min="0"
             max="100"
             value={Math.round(influenceScore * 100)}
-            onChange={(e) => onInfluenceChange(id, parseInt(e.target.value))}
+            onChange={(e) => onInfluenceChange(id, parseInt(e.target.value) / 100)}
             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
           />
         </div>
@@ -107,7 +100,7 @@ const DocumentItem: React.FC<DocumentItemProps> = ({
               min="0"
               max="100"
               value={Math.round(poisoningLevel * 100)}
-              onChange={(e) => onPoisoningChange(id, parseInt(e.target.value))}
+              onChange={(e) => onPoisoningChange(id, parseInt(e.target.value) / 100)}
               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-600"
             />
           </div>

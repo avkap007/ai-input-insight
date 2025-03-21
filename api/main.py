@@ -171,15 +171,22 @@ async def generate_response(request_data: dict):
             # Process response for attributions
             generated_text = response.content[0].text
             
-            # Mock attribution data for now
+            # Mock attribution data based on input documents
             attribution_data = {
-                "baseKnowledge": 20,
+                "baseKnowledge": 40,
                 "documents": [
                     {"id": str(doc.id), "name": doc.name, "contribution": matching_req_doc.get("influence", 0.5) * 100}
                     for doc in documents
                     if next((d for d in request_data["documents"] if d["id"] == str(doc.id)), None)
                 ]
             }
+            
+            # Normalize contributions to ensure they sum up to 60%
+            total_contributions = sum(doc["contribution"] for doc in attribution_data["documents"])
+            if total_contributions > 0:
+                ratio = 60 / total_contributions
+                for doc in attribution_data["documents"]:
+                    doc["contribution"] = doc["contribution"] * ratio
             
             return {
                 "generated_text": generated_text,
@@ -282,7 +289,7 @@ async def get_messages(chatSessionId: str, db: Session = Depends(get_db)):
             "id": str(msg.id),
             "role": msg.role,
             "content": msg.content,
-            "timestamp": msg.timestamp.isoformat()
+            "timestamp": msg.timestamp
         }
         for msg in messages
     ]
@@ -296,11 +303,14 @@ async def save_message(data: dict, db: Session = Depends(get_db)):
     if not chat_session_id or not role or not content:
         raise HTTPException(status_code=400, detail="Missing required fields")
     
+    # Create message with timestamp here, don't rely on data
+    current_time = datetime.now().isoformat()
+    
     new_message = Message(
         chat_session_id=chat_session_id,
         role=role,
         content=content,
-        timestamp=datetime.now()  # Set timestamp here to avoid None
+        timestamp=current_time
     )
     db.add(new_message)
     db.commit()
@@ -310,5 +320,5 @@ async def save_message(data: dict, db: Session = Depends(get_db)):
         "id": str(new_message.id),
         "role": new_message.role,
         "content": new_message.content,
-        "timestamp": new_message.timestamp.isoformat()
+        "timestamp": new_message.timestamp
     }

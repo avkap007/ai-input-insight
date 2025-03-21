@@ -1,3 +1,4 @@
+
 from sqlalchemy import Column, Integer, String, Text, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from .database import Base
@@ -9,6 +10,7 @@ class Document(Base):
     name = Column(String, index=True)
     content = Column(Text)
     sentiment_score = Column(Float)
+    influence_score = Column(Float, default=0.5)
 
 class ChatSession(Base):
     __tablename__ = "chat_sessions"

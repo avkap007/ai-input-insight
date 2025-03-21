@@ -17,7 +17,7 @@ const AttributionChart: React.FC<AttributionChartProps> = ({ data }) => {
   // Prepare data for the pie chart
   const chartData = [
     {
-      name: 'Model Base Knowledge',
+      name: 'AI Base Knowledge',
       value: data.baseKnowledge || 0,
       color: '#0088FE'
     },
@@ -48,7 +48,7 @@ const AttributionChart: React.FC<AttributionChartProps> = ({ data }) => {
 
   return (
     <div className="bg-white p-4 rounded-md shadow-sm mb-4">
-      <h3 className="text-sm font-medium mb-3 text-gray-700">Response Attribution</h3>
+      <h3 className="text-sm font-medium mb-3 text-gray-700">Source Attribution</h3>
       <div className="flex flex-col md:flex-row items-center justify-between">
         <div className="w-full md:w-2/3 h-48">
           <ResponsiveContainer width="100%" height="100%">
