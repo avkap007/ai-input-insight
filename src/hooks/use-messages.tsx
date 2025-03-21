@@ -1,106 +1,131 @@
 
-import { useState } from "react";
-import { Message, Document } from "@/types";
-import { toast } from "@/components/ui/use-toast";
-import { responseClient } from "@/utils/apiClients";
-import { analysisClient } from "@/utils/apiClients";
-import { v4 as uuidv4 } from "uuid";
+import { useState, useCallback } from 'react';
+import { Message, Document, TokenAttribution, AttributionData, AnalysisData } from '@/types';
+import { saveMessage, getMessages } from '@/services/chatService';
+import { responseClient, analysisClient } from '@/utils/apiClients';
+import { toast } from '@/components/ui/use-toast';
 
-// Changed to accept a chatSessionId parameter, but make it optional with default value of null
-export const useMessages = (chatSessionId: string | null = null) => {
+export const useMessages = (chatSessionId: string | null) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Updated handleSendMessage to accept documents as a parameter
-  const handleSendMessage = async (content: string, documents: Document[]) => {
+  // Load initial messages when component mounts with a valid chat session ID
+  const loadMessages = useCallback(async () => {
+    if (!chatSessionId) return;
+    
     try {
-      // Add user message to the UI immediately
-      const userMessage: Message = {
-        id: uuidv4(),
-        role: "user",
+      const loadedMessages = await getMessages(chatSessionId);
+      setMessages(loadedMessages);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  }, [chatSessionId]);
+
+  // Send a new message and get AI response
+  const handleSendMessage = useCallback(async (content: string, documents: Document[]) => {
+    if (!chatSessionId || !content.trim()) return;
+    
+    try {
+      setIsProcessing(true);
+      
+      // Save user message
+      const userMessage: Omit<Message, 'id'> = {
+        role: 'user',
         content,
         timestamp: new Date(),
       };
       
-      setMessages((prev) => [...prev, userMessage]);
-      setIsProcessing(true);
-
-      // Prepare documents for the API request
-      const docsForRequest = documents.map(doc => ({
-        id: doc.id,
-        influence: doc.influenceScore,
-        excluded: doc.excluded || false,
-        poisoningLevel: doc.poisoningLevel || 0
-      }));
-
-      console.log(`Sending request with ${docsForRequest.length} documents`);
+      const savedUserMessage = await saveMessage(chatSessionId, userMessage);
+      setMessages(prevMessages => [...prevMessages, savedUserMessage]);
       
-      // Get AI response
-      const response = await responseClient.generateResponse(content, docsForRequest);
+      // Generate AI response
+      console.log(`Sending request with ${documents.length} documents`);
+      const response = await responseClient.generateResponse(content, documents);
       
-      if (!response || !response.generated_text) {
-        throw new Error("Invalid response from AI");
+      if (!response) {
+        throw new Error('Failed to generate response');
       }
-
-      // Process the analysis asynchronously
-      const generatedText = response.generated_text;
-      let sentiment = 0;
-      let bias = { political: 0.2 };
-      let trustScore = 0.5;
+      
+      // Extract data from response
+      const generatedText = response.generated_text || "I couldn't generate a response at this time.";
+      const attributions: TokenAttribution[] = response.attributions || [];
+      
+      // Create attribution data for pie chart
+      const attributionData: AttributionData = response.attributionData || {
+        baseKnowledge: 100,
+        documents: documents.map(doc => ({
+          id: doc.id,
+          name: doc.name,
+          contribution: 0
+        }))
+      };
+      
+      // Analyze response for sentiment, bias, and trust
+      let analysisData: AnalysisData | null = null;
       
       try {
-        // Run analysis in parallel
-        [sentiment, bias, trustScore] = await Promise.all([
-          analysisClient.analyzeSentiment(generatedText),
-          analysisClient.detectBias(generatedText),
-          analysisClient.calculateTrustScore(
-            response.attributionData?.baseKnowledge || 50,
-            response.attributionData?.documents || []
-          )
-        ]);
-      } catch (analysisError) {
-        console.error("Error during analysis:", analysisError);
-        // Continue with default values if analysis fails
+        // Get sentiment analysis
+        const sentimentResponse = await analysisClient.analyzeSentiment(generatedText);
+        const sentiment = sentimentResponse?.sentiment_score || 0;
+        
+        // Get bias analysis
+        const biasResponse = await analysisClient.detectBias(generatedText);
+        const bias = biasResponse?.bias_scores || { political: 0.2, gender: 0.1 };
+        
+        // Calculate trust score
+        const baseKnowledgePercentage = attributionData.baseKnowledge;
+        const documentContributions = attributionData.documents;
+        
+        const trustResponse = await analysisClient.calculateTrustScore(
+          baseKnowledgePercentage,
+          documentContributions
+        );
+        
+        const trustScore = trustResponse?.trust_score || 0.5;
+        
+        // Combine all analysis data
+        analysisData = {
+          sentiment,
+          bias,
+          trustScore
+        };
+      } catch (error) {
+        console.error('Error analyzing response:', error);
+        analysisData = {
+          sentiment: 0,
+          bias: { political: 0.2, gender: 0.1 },
+          trustScore: 0.5
+        };
       }
-
-      // Create and add assistant message
-      const assistantMessage: Message = {
-        id: uuidv4(),
-        role: "assistant",
+      
+      // Save AI message
+      const aiMessage: Omit<Message, 'id'> = {
+        role: 'assistant',
         content: generatedText,
         timestamp: new Date(),
-        analysisData: { sentiment, bias, trustScore },
-        attributions: response.attributions || [],
-        attributionData: response.attributionData || {
-          baseKnowledge: 100,
-          documents: []
-        },
+        attributions,
+        attributionData,
+        analysisData
       };
-
-      setMessages((prev) => [...prev, assistantMessage]);
+      
+      const savedAiMessage = await saveMessage(chatSessionId, aiMessage);
+      setMessages(prevMessages => [...prevMessages, savedAiMessage]);
     } catch (error) {
-      console.error("Error processing message:", error);
-      
+      console.error('Error in message flow:', error);
       toast({
-        title: "Error",
-        description: "Failed to process message. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to process your request.',
+        variant: 'destructive',
       });
-      
-      // Add error message so user knows what happened
-      const errorMessage: Message = {
-        id: uuidv4(),
-        role: "assistant",
-        content: "I'm sorry, I couldn't process your request. Please try again later.",
-        timestamp: new Date(),
-        analysisData: { sentiment: 0, bias: { political: 0 }, trustScore: 0 },
-      };
-      
-      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [chatSessionId]);
 
-  return { messages, setMessages, isProcessing, handleSendMessage };
+  return {
+    messages,
+    isProcessing,
+    handleSendMessage,
+    loadMessages
+  };
 };

@@ -71,7 +71,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               <div 
                 key={message.id} 
                 className={cn(
-                  isMobile ? "max-w-[90%]" : "max-w-3xl",
+                  "w-full max-w-full sm:max-w-[90%] md:max-w-3xl",
                   message.role === 'user' ? 'ml-auto' : 'mr-auto'
                 )}
               >
@@ -106,7 +106,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           )}
           {isProcessing && (
             <div className={cn(
-              isMobile ? "max-w-[90%]" : "max-w-3xl",
+              "w-full max-w-full sm:max-w-[90%] md:max-w-3xl",
               "mr-auto"
             )}>
               <div className="bg-gray-100 text-gray-800 rounded-2xl p-6">

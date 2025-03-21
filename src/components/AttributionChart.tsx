@@ -36,11 +36,21 @@ const AttributionChart: React.FC<AttributionChartProps> = ({ data }) => {
     return null;
   }
 
+  const formatTooltipValue = (value: any) => {
+    if (typeof value === 'number') {
+      return `${value.toFixed(1)}%`;
+    }
+    if (typeof value === 'string' && !isNaN(parseFloat(value))) {
+      return `${parseFloat(value).toFixed(1)}%`;
+    }
+    return value;
+  };
+
   return (
     <div className="bg-white p-4 rounded-md shadow-sm">
       <h3 className="text-sm font-medium mb-2 text-gray-700">Response Attribution</h3>
-      <div className="flex items-center justify-between">
-        <div className="w-2/3 h-48">
+      <div className="flex flex-col md:flex-row items-center justify-between">
+        <div className="w-full md:w-2/3 h-48">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -49,25 +59,23 @@ const AttributionChart: React.FC<AttributionChartProps> = ({ data }) => {
                 outerRadius={80}
                 paddingAngle={2}
                 dataKey="value"
-                label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                label={({ name, percent }) => percent > 0.05 ? `${Math.round(percent * 100)}%` : ''}
                 labelLine={false}
               >
                 {filteredData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip
-                formatter={(value) => {
-                  // Handle the type safely - ensure value is a number before calling toFixed
-                  const numValue = typeof value === 'number' ? value : parseFloat(String(value));
-                  return isNaN(numValue) ? [value, 'Contribution'] : [`${numValue.toFixed(1)}%`, 'Contribution'];
+              <Tooltip 
+                formatter={(value: any) => {
+                  return [formatTooltipValue(value), 'Contribution'];
                 }}
                 labelFormatter={(index) => filteredData[index].name}
               />
             </PieChart>
           </ResponsiveContainer>
         </div>
-        <div className="w-1/3">
+        <div className="w-full md:w-1/3">
           <div className="space-y-1.5">
             {filteredData.map((entry, index) => (
               <div key={index} className="flex items-center text-xs">

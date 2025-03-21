@@ -40,6 +40,9 @@ const DocumentItem: React.FC<DocumentItemProps> = ({
     }
   };
 
+  // Calculate the influence percentage for display
+  const influencePercentage = Math.round((document.influenceScore || 0) * 100);
+
   return (
     <div className={`p-3 rounded-lg border ${document.excluded ? 'border-red-200 bg-red-50' : 'border-gray-100 bg-gray-50'} flex flex-col gap-2 group animate-scale-in`}>
       <div className="flex items-center justify-between overflow-hidden">
@@ -80,7 +83,7 @@ const DocumentItem: React.FC<DocumentItemProps> = ({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Label htmlFor={`influence-${document.id}`} className="text-xs text-gray-500 flex items-center cursor-help">
-                  Influence: {Math.round((document.influenceScore || 0) * 100)}%
+                  Influence: {influencePercentage}%
                   <InfoIcon size={12} className="ml-1 text-gray-400" />
                 </Label>
               </TooltipTrigger>
@@ -99,10 +102,12 @@ const DocumentItem: React.FC<DocumentItemProps> = ({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          <span className="text-xs font-medium">{influencePercentage}%</span>
         </div>
         <Slider
           id={`influence-${document.id}`}
-          defaultValue={[(document.influenceScore || 0) * 100]}
+          defaultValue={[influencePercentage]}
+          value={[influencePercentage]}
           max={100}
           step={1}
           onValueChange={handleInfluenceChange}
@@ -144,10 +149,12 @@ const DocumentItem: React.FC<DocumentItemProps> = ({
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+              <span className="text-xs font-medium">{Math.round((document.poisoningLevel || 0) * 100)}%</span>
             </div>
             <Slider
               id={`poisoning-${document.id}`}
-              defaultValue={[(document.poisoningLevel || 0) * 100]}
+              defaultValue={[Math.round((document.poisoningLevel || 0) * 100)]}
+              value={[Math.round((document.poisoningLevel || 0) * 100)]}
               max={100}
               step={1}
               onValueChange={handlePoisoningChange}

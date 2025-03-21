@@ -5,7 +5,6 @@ import DocumentUpload from '@/components/DocumentUpload';
 import ChatInterface from '@/components/ChatInterface';
 import MainLayout from '@/components/layout/MainLayout';
 import { toast } from '@/components/ui/use-toast';
-import { getDocuments } from '@/services/documentService';
 import { createChatSession } from '@/services/chatService';
 import { useDocuments } from '@/hooks/use-documents';
 import { useMessages } from '@/hooks/use-messages';
@@ -37,7 +36,6 @@ const Index = () => {
 
   // Create a wrapper function to handle document uploads for DocumentUpload component
   const handleDocUpload = (document: Document) => {
-    // Simply pass on the document as is - it's already in the right format
     return document;
   };
 
@@ -51,8 +49,6 @@ const Index = () => {
       try {
         const sessionId = await createChatSession();
         setChatSessionId(sessionId);
-        
-        // We've removed the document loading since it's handled by the useDocuments hook
       } catch (error) {
         console.error("Error initializing chat:", error);
         toast({

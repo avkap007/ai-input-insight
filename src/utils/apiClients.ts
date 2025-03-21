@@ -86,12 +86,23 @@ export const documentClient = {
 export const responseClient = {
   generateResponse: async (query: string, documents: any[]) => {
     try {
-      console.log(`Sending request with ${documents.length} documents`, { query, documents });
+      // Ensure we're only sending non-excluded documents and including influence scores
+      const processedDocuments = documents
+        .filter(doc => !doc.excluded)
+        .map(doc => ({
+          id: doc.id,
+          name: doc.name,
+          content: doc.content,
+          influence: doc.influenceScore || 0.5,
+          poisoningLevel: doc.poisoningLevel || 0
+        }));
+      
+      console.log(`Sending request with ${processedDocuments.length} documents`, { query, documents: processedDocuments });
       
       const response = await fetch(`${API_BASE_URL}/generate-response`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, documents }),
+        body: JSON.stringify({ query, documents: processedDocuments }),
       });
 
       if (!response.ok) {
