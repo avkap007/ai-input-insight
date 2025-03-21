@@ -1,69 +1,161 @@
-# Welcome to your Lovable project
+# 🧠 AI Input Insight
 
-## Project info
+**AI Input Insight** is a visual debugging and transparency tool for understanding how large language models (LLMs) synthesize responses based on different document inputs.
 
-**URL**: https://lovable.dev/projects/746190b6-539f-4d66-89ef-70cfa210d6c7
+It supports:
+- 📄 Uploading PDFs or entering custom snippets  
+- 🌺 Adjusting influence and data poisoning levels  
+- 💬 Analyzing sentiment, bias, and trust scoring  
+- 🧩 Token attribution visualization from sources  
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## 🌐 Project Access
 
-**Use Lovable**
+> **For reference (old preview link):**  
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/746190b6-539f-4d66-89ef-70cfa210d6c7) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🛠️ Tech Stack
 
-**Use your preferred IDE**
+### Frontend
+- [React](https://react.dev/) + TypeScript  
+- [Tailwind CSS](https://tailwindcss.com/)  
+- [shadcn/ui](https://ui.shadcn.com/)  
+- [Vite](https://vitejs.dev/)  
+- [Recharts](https://recharts.org/en-US) for data visualization  
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Backend
+- [FastAPI](https://fastapi.tiangolo.com/)  
+- Python 3.9  
+- NLP tools:
+  - **Sentiment**: NLTK / VADER  
+  - **Bias Detection**: TextBlob / Biaslyze *(planned)*  
+  - **Trust Score**: Custom heuristics  
+- [Supabase](https://supabase.com/) (PostgreSQL) for data storage  
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## 🚧 Local Development Setup
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 1. Clone the Repository
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+```bash
+git clone <YOUR_GIT_REPO_URL>
+cd ai-input-insight
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+### 2. Frontend Setup
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+> Runs on `http://localhost:5173`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### 3. Backend Setup (FastAPI)
 
-**Use GitHub Codespaces**
+It’s recommended to use a virtual environment:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```bash
+cd backend  # or wherever `main.py` lives
+python3 -m venv env
+source env/bin/activate
+pip install -r requirements.txt
+```
 
-## What technologies are used for this project?
+Run the API server:
 
-This project is built with .
+```bash
+uvicorn main:app --reload
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+> Runs on `http://localhost:8000`
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/746190b6-539f-4d66-89ef-70cfa210d6c7) and click on Share -> Publish.
+## 📦 Project Structure
 
-## I want to use a custom domain - is that possible?
+```
+/src
+  ├── components/       # All UI components
+  ├── hooks/            # React hooks
+  ├── utils/            # Utility + analysis logic
+  ├── services/         # API clients
+  ├── types/            # Shared types
+  └── pages/            # Route views like /about
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+/backend
+  └── main.py           # FastAPI entrypoint
+```
+
+---
+
+## 🧪 Analysis Features
+
+- 🔍 **Influence Slider**: Adjust how much each document affects the response  
+- 🧪 **Data Poisoning**: Simulate adversarial input impact  
+- 🧠 **Token Attribution**: Map generated text back to documents  
+- 📈 **Charts**: Source influence and sentiment visualizations  
+- ✅ **Trust Score**: Evaluate response reliability  
+
+---
+
+## 📟 Backend `requirements.txt`
+
+Ensure the following are present in `requirements.txt`:
+
+```
+fastapi
+uvicorn
+python-multipart
+nltk
+textblob
+vaderSentiment
+# optional/planned:
+# biaslyze
+```
+
+Generate the file with:
+
+```bash
+pip freeze > requirements.txt
+```
+
+---
+
+## 🚀 Deployment Plans
+
+The app is currently being developed locally. Due to the large size (~400+ MB with `node_modules`), deployment is temporarily paused.
+
+**Next steps:**
+- Migrate backend to a serverless deployment (e.g., Supabase Functions or Railway)  
+- Optimize frontend bundle for Vercel or Netlify  
+- Attach a hosted PostgreSQL DB (or Supabase instance)  
+
+---
+
+## 🙏 Acknowledgments
+
+This project was developed as a part of **CMPT 415 Directed Studies** under the supervision of:
+
+- Dr. Nicholas Vincent  
+- Dr. Margaret Grant  
+Simon Fraser University  
+
+---
+
+## 📌 Future Work
+
+- Add Biaslyze integration for deeper bias analysis  
+- Support token-level hover-to-source explanations  
+- Exportable attribution reports (PDF/CSV)  
+- Deploy full-stack version with persistent DB  
+
+---
+
+## 📬 Contact
+
+Built with love by **Avni Kapoor**  
+✉️ `avnikapooredu@email.com` 
