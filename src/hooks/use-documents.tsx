@@ -15,6 +15,7 @@ export const useDocuments = () => {
       try {
         setIsLoading(true);
         const response = await documentClient.getDocuments();
+        console.log("Fetched documents from API:", response);
         
         // Map the API response to our Document type
         const mappedDocuments = response.map((doc: any) => ({
@@ -28,6 +29,8 @@ export const useDocuments = () => {
           excluded: false
         }));
         
+        console.log("Mapped documents:", mappedDocuments);
+
         setDocuments(mappedDocuments);
       } catch (error) {
         console.error("Error fetching documents:", error);
