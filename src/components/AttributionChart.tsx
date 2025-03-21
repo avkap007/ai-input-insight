@@ -50,16 +50,16 @@ const AttributionChart: React.FC<AttributionChartProps> = ({ data }) => {
     <div className="bg-white p-4 rounded-md shadow-sm mb-4">
       <h3 className="text-sm font-medium mb-3 text-gray-700">Source Attribution</h3>
       <div className="flex flex-col md:flex-row items-center justify-between">
-        <div className="w-full md:w-2/3 h-48">
+        <div className="w-full md:w-1/2 h-48">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={filteredData}
-                innerRadius={60}
-                outerRadius={80}
+                innerRadius={50}
+                outerRadius={70}
                 paddingAngle={2}
                 dataKey="value"
-                label={({ name, value }) => value > 5 ? `${Math.round(value)}%` : ''}
+                label={({ value }) => value > 5 ? `${Math.round(value)}%` : ''}
                 labelLine={false}
               >
                 {filteredData.map((entry, index) => (
@@ -75,15 +75,15 @@ const AttributionChart: React.FC<AttributionChartProps> = ({ data }) => {
             </PieChart>
           </ResponsiveContainer>
         </div>
-        <div className="w-full md:w-1/3">
-          <div className="space-y-2">
+        <div className="w-full md:w-1/2">
+          <div className="space-y-2 p-2">
             {filteredData.map((entry, index) => (
               <div key={index} className="flex items-center text-xs">
-                <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: entry.color }}></div>
-                <div className="truncate flex-1" title={entry.name}>
-                  {entry.name.length > 20 ? `${entry.name.substring(0, 18)}...` : entry.name}
+                <div className="w-3 h-3 rounded-full mr-2 flex-shrink-0" style={{ backgroundColor: entry.color }}></div>
+                <div className="truncate flex-1 max-w-[150px]" title={entry.name}>
+                  {entry.name.length > 18 ? `${entry.name.substring(0, 16)}...` : entry.name}
                 </div>
-                <div className="font-medium ml-1">{formatTooltipValue(entry.value)}</div>
+                <div className="font-medium ml-1 flex-shrink-0">{formatTooltipValue(entry.value)}</div>
               </div>
             ))}
           </div>

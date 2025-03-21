@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
-import { Message, TokenAttribution, AttributionData } from '@/types';
+import { Message } from '@/types';
 import { cn } from '@/lib/utils';
 import InfluenceVisualization from './InfluenceVisualization';
 import AttributionChart from './AttributionChart';
@@ -131,14 +131,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask a question or request content based on your documents..."
-            className="flex-1 input-field"
+            className="flex-1 input-field px-4 py-2 border border-gray-300 rounded-lg"
             disabled={isProcessing}
           />
           <button 
             type="submit" 
             className={cn(
-              "btn-primary",
-              isProcessing ? "opacity-50 cursor-not-allowed" : ""
+              "btn-primary bg-primary text-primary-foreground px-4 py-2 rounded-lg flex items-center justify-center",
+              isProcessing ? "opacity-50 cursor-not-allowed" : "hover:bg-primary/90"
             )}
             disabled={isProcessing}
           >

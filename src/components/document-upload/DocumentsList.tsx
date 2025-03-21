@@ -25,7 +25,7 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
   }
 
   return (
-    <div className="mt-5 space-y-2.5 max-h-[500px] overflow-y-auto elegant-scrollbar pr-1">
+    <div className="mt-5 space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto elegant-scrollbar pr-1">
       {documents.map(doc => (
         <DocumentItem 
           key={doc.id} 

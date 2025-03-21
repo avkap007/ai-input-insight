@@ -40,7 +40,7 @@ const DocumentItem: React.FC<DocumentItemProps> = ({
     )}>
       <div className="flex items-start justify-between">
         <div className="flex items-center">
-          <div className="mr-2">
+          <div className="mr-2 flex-shrink-0">
             {type === 'pdf' ? (
               <svg className="w-8 h-8 text-red-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -55,14 +55,14 @@ const DocumentItem: React.FC<DocumentItemProps> = ({
               </svg>
             )}
           </div>
-          <div>
-            <h3 className="font-medium text-gray-900 truncate max-w-[200px]" title={name}>{name}</h3>
+          <div className="min-w-0 flex-1">
+            <h3 className="font-medium text-gray-900 truncate max-w-[180px]" title={name}>{name}</h3>
             {size && <p className="text-xs text-gray-500">{formatSize(size)}</p>}
           </div>
         </div>
         <button
           onClick={() => onRemove(id)}
-          className="text-gray-400 hover:text-gray-500 transition-colors"
+          className="text-gray-400 hover:text-gray-500 transition-colors flex-shrink-0"
           aria-label="Remove document"
         >
           <X size={16} />

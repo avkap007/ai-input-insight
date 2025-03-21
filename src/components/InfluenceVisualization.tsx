@@ -26,17 +26,19 @@ const InfluenceVisualization: React.FC<InfluenceVisualizationProps> = ({
 
   // Find a document name from its ID (used in tooltip)
   const getDocumentName = (documentId: string): string => {
-    // This is a placeholder - in a real app, you would probably have a way to get 
-    // the document name from its ID via a context or other mechanism
+    if (!documentId) return 'Unknown Source';
+    // This is a simplified version - in a real app you would have access to full document context
     return documentId.includes('_') 
       ? documentId.split('_')[0] 
-      : `Document ${documentId.substring(0, 8)}...`; 
+      : documentId.length > 10 
+        ? `${documentId.substring(0, 8)}...` 
+        : documentId;
   };
 
   return (
     <div className="text-gray-700 leading-relaxed">
       <div className="mb-3 flex flex-col">
-        <div className="mb-2 flex flex-wrap items-center gap-3">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
           <button 
             onClick={() => toggleHighlightMode('all')}
             className={cn(
@@ -87,14 +89,14 @@ const InfluenceVisualization: React.FC<InfluenceVisualizationProps> = ({
                     className={cn(
                       "inline transition-colors cursor-pointer",
                       attribution.source === 'base' 
-                        ? 'highlight-base bg-blue-50 hover:bg-blue-100' 
-                        : 'highlight-document bg-amber-50 hover:bg-amber-100'
+                        ? 'bg-blue-50 hover:bg-blue-100' 
+                        : 'bg-amber-50 hover:bg-amber-100'
                     )}
                   >
                     {attribution.text}
                   </span>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="px-3 py-2 bg-white">
+                <TooltipContent side="top" className="px-3 py-2 bg-white shadow-md z-50">
                   {attribution.source === 'base' 
                     ? (
                       <div className="space-y-1">

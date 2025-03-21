@@ -131,7 +131,7 @@ export const useMessages = (chatSessionId: string | null) => {
       console.error('Error in message flow:', error);
       toast({
         title: 'Error',
-        description: 'Failed to process your request.',
+        description: 'Failed to process your request. Please try again.',
         variant: 'destructive',
       });
     } finally {

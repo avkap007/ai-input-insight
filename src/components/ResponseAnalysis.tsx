@@ -202,17 +202,17 @@ const ResponseAnalysis: React.FC<ResponseAnalysisProps> = ({ analysisData }) => 
                 </p>
               </div>
               
-              {/* Technical explanation */}
+              {/* Technical explanation - Updated to be more accurate */}
               <div className="mt-6 pt-4 border-t border-gray-100">
                 <h4 className="text-xs font-medium text-gray-700 mb-2">Technical Details</h4>
                 <p className="text-xs text-gray-500 mb-2">
-                  This analysis uses several NLP techniques to evaluate the generated content:
+                  This analysis combines several approaches to evaluate AI content:
                 </p>
                 <ul className="text-xs text-gray-500 list-disc pl-4 space-y-1">
-                  <li><strong>Token Attribution:</strong> Maps output tokens to input sources using attention weights</li>
-                  <li><strong>Sentiment Analysis:</strong> Lexicon-based approach with contextual adjustment</li>
-                  <li><strong>Bias Detection:</strong> Word frequency analysis across semantic categories</li>
-                  <li><strong>Trust Scoring:</strong> Weighted combination of attribution metrics</li>
+                  <li><strong>Token Attribution:</strong> Uses attention weights to match response text to source documents</li>
+                  <li><strong>Sentiment Analysis:</strong> Applies a combination of rule-based and ML techniques to detect emotional tone</li>
+                  <li><strong>Bias Detection:</strong> Examines language patterns for skewed representations across demographic and viewpoint dimensions</li>
+                  <li><strong>Trust Scoring:</strong> Calculates confidence based on attribution overlap and source diversity</li>
                 </ul>
               </div>
             </>
