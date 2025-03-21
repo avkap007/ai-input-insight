@@ -9,21 +9,6 @@ import os
 from textblob import TextBlob
 from .database import SessionLocal, engine, Base
 from .models import Document, ChatSession, Message
-from fastapi.middleware.cors import CORSMiddleware
-
-app = FastAPI()  # Create the app instance first
-
-origins = ["http://localhost:8080"]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-load_dotenv()
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -31,11 +16,13 @@ app = FastAPI()
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For development - restrict this in production
+    allow_origins=["http://localhost:8080"],  # Frontend origin
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+load_dotenv()
 
 # Initialize Anthropic API client
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
@@ -74,13 +61,28 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
     db.commit()
     db.refresh(new_doc)
 
-    return {"filename": file.filename, "content": content, "sentiment_score": sentiment}
+    return {"filename": file.filename, "content": content, "sentiment_score": sentiment, "id": new_doc.id}
+
+# Also provide the upload-document endpoint to match frontend calls
+@app.post("/upload-document")
+async def upload_document_alt(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    return await upload_document(file, db)
 
 # Get all documents
 @app.get("/documents")
 def get_documents(db: Session = Depends(get_db)):
     documents = db.query(Document).all()
-    return documents
+    return [
+        {
+            "id": str(doc.id),
+            "name": doc.name,
+            "content": doc.content,
+            "sentiment_score": doc.sentiment_score,
+            "influence_score": doc.influence_score or 0.5,
+            "type": "pdf" if doc.name.endswith(".pdf") else "text"
+        }
+        for doc in documents
+    ]
 
 # Delete document
 @app.delete("/delete-document/{document_id}")
@@ -106,6 +108,16 @@ def update_influence(document_id: str, influence_data: dict, db: Session = Depen
     db.refresh(document)
     
     return document
+
+# Extract PDF text
+@app.post("/extract-pdf-text")
+async def extract_pdf_text(file: UploadFile = File(...)):
+    if not file.filename.endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="File is not a PDF")
+    
+    with pdfplumber.open(file.file) as pdf:
+        content = "\n".join([page.extract_text() for page in pdf.pages if page.extract_text()])
+    return {"extracted_text": content}
 
 # Generate AI response using Anthropic API
 @app.post("/generate-response")
@@ -236,3 +248,51 @@ async def calculate_trust_score(data: dict):
     trust_score = min(max(trust_score, 0), 1)
     
     return {"trust_score": trust_score}
+
+# Chat session API routes to handle frontend calls
+@app.post("/api/chat/sessions")
+async def create_chat_session(data: dict, db: Session = Depends(get_db)):
+    title = data.get("title", "New Chat")
+    new_session = ChatSession(title=title)
+    db.add(new_session)
+    db.commit()
+    db.refresh(new_session)
+    return {"id": str(new_session.id)}
+
+@app.get("/api/chat/messages")
+async def get_messages(chatSessionId: str, db: Session = Depends(get_db)):
+    messages = db.query(Message).filter(Message.chat_session_id == chatSessionId).order_by(Message.timestamp).all()
+    return [
+        {
+            "id": str(msg.id),
+            "role": msg.role,
+            "content": msg.content,
+            "timestamp": msg.timestamp.isoformat()
+        }
+        for msg in messages
+    ]
+
+@app.post("/api/chat/messages")
+async def save_message(data: dict, db: Session = Depends(get_db)):
+    chat_session_id = data.get("chatSessionId")
+    role = data.get("role")
+    content = data.get("content")
+    
+    if not chat_session_id or not role or not content:
+        raise HTTPException(status_code=400, detail="Missing required fields")
+    
+    new_message = Message(
+        chat_session_id=chat_session_id,
+        role=role,
+        content=content
+    )
+    db.add(new_message)
+    db.commit()
+    db.refresh(new_message)
+    
+    return {
+        "id": str(new_message.id),
+        "role": new_message.role,
+        "content": new_message.content,
+        "timestamp": new_message.timestamp.isoformat()
+    }

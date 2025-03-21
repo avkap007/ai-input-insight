@@ -7,7 +7,7 @@ export const mapDbDocumentToDocument = (dbDocument: any): Document => {
   return {
     id: dbDocument.id,
     name: dbDocument.name,
-    type: dbDocument.type,
+    type: dbDocument.type || (dbDocument.name.endsWith('.pdf') ? 'pdf' : 'text'),
     content: dbDocument.content,
     size: dbDocument.size || undefined,
     influenceScore: dbDocument.influence_score,
@@ -18,63 +18,41 @@ export const mapDbDocumentToDocument = (dbDocument: any): Document => {
 
 // Get all documents
 export const getDocuments = async (): Promise<Document[]> => {
-  const response = await fetch("/api/documents");
-  if (!response.ok) {
-    throw new Error("Error fetching documents");
+  try {
+    const data = await documentClient.getDocuments();
+    return data.map(mapDbDocumentToDocument);
+  } catch (error) {
+    console.error("Error in getDocuments service:", error);
+    throw error;
   }
-  const data = await response.json();
-  return data.map(mapDbDocumentToDocument);
+};
+
+// Upload a file as a document
+export const uploadFile = async (file: File): Promise<Document> => {
+  try {
+    const data = await documentClient.uploadDocument(file);
+    return mapDbDocumentToDocument(data);
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    throw error;
+  }
 };
 
 // Save a document
 export const saveDocument = async (document: Document): Promise<Document> => {
-  const response = await fetch("/api/upload", {
-    method: "POST",
-    body: JSON.stringify(document),
-    headers: { "Content-Type": "application/json" },
-  });
-
-  if (!response.ok) {
-    throw new Error("Error saving document");
-  }
-
-  const data = await response.json();
-  
-  try {
-    // Instead of passing the document directly to uploadDocument, just log it
-    // We don't need to call documentClient.uploadDocument here since it's for Files
-    console.log("Document saved locally:", data.id);
-  } catch (apiError) {
-    console.error("Error processing document (continuing with local save):", apiError);
-  }
-
-  return { ...mapDbDocumentToDocument(data), poisoningLevel: document.poisoningLevel || 0, excluded: document.excluded || false };
+  console.log("Saving document:", document);
+  // This is just a placeholder - in a real app, you'd send this to the backend
+  return { ...document, id: document.id || crypto.randomUUID() };
 };
 
 // Delete a document
 export const deleteDocument = async (id: string): Promise<void> => {
   console.log(`Deleting document with ID: ${id}`);
-
-  const response = await fetch(`/api/documents/${id}`, {
-    method: "DELETE",
-  });
-
-  if (!response.ok) {
-    throw new Error("Error deleting document");
-  }
-
+  await documentClient.deleteDocument(id);
   console.log(`Successfully deleted document ${id}`);
 };
 
 // Update document influence score
 export const updateDocumentInfluence = async (id: string, influenceScore: number): Promise<void> => {
-  const response = await fetch(`/api/documents/${id}/influence`, {
-    method: "PUT",
-    body: JSON.stringify({ influence_score: influenceScore }),
-    headers: { "Content-Type": "application/json" },
-  });
-
-  if (!response.ok) {
-    throw new Error("Error updating document influence");
-  }
+  await documentClient.updateDocumentInfluence(id, influenceScore);
 };
