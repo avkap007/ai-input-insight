@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Document } from "@/types";
 import { toast } from "@/components/ui/use-toast";
 import { documentClient } from "@/utils/apiClients";
@@ -10,38 +10,38 @@ export const useDocuments = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch documents from API on load
-  useEffect(() => {
-    const fetchDocuments = async () => {
-      try {
-        setIsLoading(true);
-        const response = await documentClient.getDocuments();
-        console.log("Fetched documents from API:", response);
-        
-        // Map the API response to our Document type
-        const mappedDocuments = response.map((doc: any) => ({
-          id: doc.id,
-          name: doc.name,
-          type: doc.name.endsWith('.pdf') ? 'pdf' : 'text',
-          content: doc.content,
-          size: doc.size || undefined,
-          influenceScore: doc.influence_score || 0.5,
-          poisoningLevel: 0,
-          excluded: false
-        }));
-        
-        console.log("Mapped documents:", mappedDocuments);
+  const fetchDocuments = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await documentClient.getDocuments();
+      console.log("Fetched documents from API:", response);
+      
+      // Map the API response to our Document type
+      const mappedDocuments = response.map((doc: any) => ({
+        id: doc.id,
+        name: doc.name,
+        type: doc.name.endsWith('.pdf') ? 'pdf' : 'text',
+        content: doc.content,
+        size: doc.size || undefined,
+        influenceScore: doc.influence_score !== undefined ? doc.influence_score : 0.5,
+        poisoningLevel: 0,
+        excluded: false
+      }));
+      
+      console.log("Mapped documents:", mappedDocuments);
 
-        setDocuments(mappedDocuments);
-      } catch (error) {
-        console.error("Error fetching documents:", error);
-        toast({ title: "Error", description: "Failed to load documents.", variant: "destructive" });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchDocuments();
+      setDocuments(mappedDocuments);
+    } catch (error) {
+      console.error("Error fetching documents:", error);
+      toast({ title: "Error", description: "Failed to load documents.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+  
+  useEffect(() => {
+    fetchDocuments();
+  }, [fetchDocuments]);
 
   // Handle document upload
   const handleDocumentUpload = async (file: File) => {
@@ -55,7 +55,7 @@ export const useDocuments = () => {
         type: uploadedDoc.filename.endsWith('.pdf') ? 'pdf' : 'text',
         content: uploadedDoc.content,
         size: file.size,
-        influenceScore: 0.5, // Default influence
+        influenceScore: uploadedDoc.influence_score !== undefined ? uploadedDoc.influence_score : 0.5,
         poisoningLevel: 0,
         excluded: false
       };
@@ -98,14 +98,20 @@ export const useDocuments = () => {
     }
   };
 
-  // Handle influence update
+  // Handle influence update - Fix to properly call API and update UI
   const handleUpdateDocumentInfluence = async (id: string, influenceScore: number) => {
     try {
+      console.log(`Updating document ${id} influence to ${influenceScore}`);
       await documentClient.updateDocumentInfluence(id, influenceScore);
+      
       setDocuments((prev) =>
         prev.map((doc) => (doc.id === id ? { ...doc, influenceScore } : doc))
       );
-      toast({ title: "Influence updated", description: `Influence set to ${Math.round(influenceScore * 100)}%` });
+      
+      toast({ 
+        title: "Influence updated", 
+        description: `Influence set to ${Math.round(influenceScore * 100)}%` 
+      });
     } catch (error) {
       console.error("Error updating document influence:", error);
       toast({ title: "Update failed", description: "Error updating influence.", variant: "destructive" });
@@ -129,6 +135,7 @@ export const useDocuments = () => {
   return {
     documents,
     isLoading,
+    fetchDocuments,
     handleDocumentUpload,
     handleAddTextDocument,
     handleRemoveDocument,

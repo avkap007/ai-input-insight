@@ -45,9 +45,12 @@ export const useMessages = (chatSessionId: string | null) => {
       const savedUserMessage = await saveMessage(chatSessionId, userMessage);
       setMessages(prevMessages => [...prevMessages, savedUserMessage]);
       
+      // Filter out any excluded documents
+      const includedDocuments = documents.filter(doc => !doc.excluded);
+      
       // Generate AI response
-      console.log(`Sending request with ${documents.length} documents`);
-      const response = await responseClient.generateResponse(content, documents);
+      console.log(`Sending request with ${includedDocuments.length} documents:`, includedDocuments);
+      const response = await responseClient.generateResponse(content, includedDocuments);
       
       if (!response) {
         throw new Error('Failed to generate response');
@@ -58,13 +61,23 @@ export const useMessages = (chatSessionId: string | null) => {
       const attributions: TokenAttribution[] = response.attributions || [];
       
       // Create attribution data for pie chart
-      const attributionData: AttributionData = response.attributionData || {
-        baseKnowledge: 100,
-        documents: documents.map(doc => ({
-          id: doc.id,
-          name: doc.name,
-          contribution: 0
-        }))
+      // Calculate document contributions based on attribution data
+      let baseKnowledgePercentage = 40; // Default value
+      let documentContributions = documents.map(doc => ({
+        id: doc.id,
+        name: doc.name,
+        contribution: 0
+      }));
+      
+      // If we have real attribution data, process it
+      if (response.attribution_data) {
+        baseKnowledgePercentage = response.attribution_data.base_knowledge_percentage || 40;
+        documentContributions = response.attribution_data.document_contributions || documentContributions;
+      }
+      
+      const attributionData: AttributionData = {
+        baseKnowledge: baseKnowledgePercentage,
+        documents: documentContributions
       };
       
       // Analyze response for sentiment, bias, and trust
@@ -75,12 +88,10 @@ export const useMessages = (chatSessionId: string | null) => {
         const sentiment = await analysisClient.analyzeSentiment(generatedText);
         
         // Get bias analysis
-        const bias = await analysisClient.detectBias(generatedText);
+        const biasData = await analysisClient.detectBias(generatedText);
+        const bias = biasData.bias_scores || { political: 0.2, gender: 0.1 };
         
-        // Calculate trust score
-        const baseKnowledgePercentage = attributionData.baseKnowledge;
-        const documentContributions = attributionData.documents;
-        
+        // Calculate trust score based on attribution
         const trustScore = await analysisClient.calculateTrustScore(
           baseKnowledgePercentage,
           documentContributions
@@ -92,12 +103,15 @@ export const useMessages = (chatSessionId: string | null) => {
           bias,
           trustScore
         };
+        
+        console.log("Analysis data:", analysisData);
       } catch (error) {
         console.error('Error analyzing response:', error);
+        // Fallback data in case analysis fails
         analysisData = {
-          sentiment: 0,
+          sentiment: 0, // Neutral sentiment
           bias: { political: 0.2, gender: 0.1 },
-          trustScore: 0.5
+          trustScore: 0.5 // Medium trust
         };
       }
       

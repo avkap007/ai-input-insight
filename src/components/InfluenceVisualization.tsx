@@ -28,8 +28,9 @@ const InfluenceVisualization: React.FC<InfluenceVisualizationProps> = ({
   const getDocumentName = (documentId: string): string => {
     // This is a placeholder - in a real app, you would probably have a way to get 
     // the document name from its ID via a context or other mechanism
-    const docIdPrefix = documentId.substring(0, 8);
-    return `Document ${docIdPrefix}...`; // Just showing first 8 chars of ID for now
+    return documentId.includes('_') 
+      ? documentId.split('_')[0] 
+      : `Document ${documentId.substring(0, 8)}...`; 
   };
 
   return (
@@ -73,7 +74,7 @@ const InfluenceVisualization: React.FC<InfluenceVisualizationProps> = ({
       
       <div className="whitespace-pre-line">
         {attributions.map((attribution, index) => {
-          // Skip rendering if it doesn't match the current highlight mode
+          // Skip highlighting if it doesn't match the current highlight mode
           if (highlightMode !== 'all' && attribution.source !== highlightMode) {
             return <span key={index}>{attribution.text}</span>;
           }

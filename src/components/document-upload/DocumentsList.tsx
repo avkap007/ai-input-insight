@@ -31,8 +31,8 @@ const DocumentsList: React.FC<DocumentsListProps> = ({
           key={doc.id} 
           document={doc} 
           onRemove={onRemoveDocument} 
-          onInfluenceChange={(id, value) => onUpdateInfluence(id, value / 100)}
-          onPoisoningChange={onUpdatePoisoning ? (id, value) => onUpdatePoisoning(id, value / 100) : undefined}
+          onInfluenceChange={onUpdateInfluence}
+          onPoisoningChange={onUpdatePoisoning}
           onExclusionChange={onUpdateExclusion}
           showAdvancedControls={showAdvancedControls}
         />

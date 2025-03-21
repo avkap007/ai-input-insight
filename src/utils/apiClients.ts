@@ -1,9 +1,29 @@
 
-// Use the correct API base URL
+import { AttributionData, Document } from "@/types";
+
+// Base URL for API endpoints
 const API_BASE_URL = "http://127.0.0.1:8000";
 
-// Document API Client
+/**
+ * Client for interacting with document-related API endpoints
+ */
 export const documentClient = {
+  // Get all documents
+  getDocuments: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/documents`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error fetching documents:", error);
+      throw error;
+    }
+  },
+
+  // Upload a document
   uploadDocument: async (file: File) => {
     try {
       const formData = new FormData();
@@ -15,105 +35,87 @@ export const documentClient = {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Upload failed: ${response.status} ${response.statusText}`, errorText);
-        throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       return await response.json();
     } catch (error) {
-      console.error("Upload error:", error);
+      console.error("Error uploading document:", error);
       throw error;
     }
   },
 
-  getDocuments: async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/documents`);
-      
-      if (!response.ok) {
-        throw new Error("Failed to fetch documents");
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error("Error fetching documents:", error);
-      throw error;
-    }
-  },
-
-  updateDocumentInfluence: async (id: string, influenceScore: number) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/update-influence/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ influence: influenceScore }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Update failed: ${response.status} ${response.statusText}`, errorText);
-        throw new Error("Update failed");
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error("Influence update error:", error);
-      throw error;
-    }
-  },
-
+  // Delete a document
   deleteDocument: async (id: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/delete-document/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
         method: "DELETE",
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Deletion failed: ${response.status} ${response.statusText}`, errorText);
-        throw new Error("Deletion failed");
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
+      return true;
+    } catch (error) {
+      console.error("Error deleting document:", error);
+      throw error;
+    }
+  },
+
+  // Update document influence score
+  updateDocumentInfluence: async (id: string, influenceScore: number) => {
+    try {
+      console.log(`Making API call to update document ${id} influence to ${influenceScore}`);
+      const response = await fetch(`${API_BASE_URL}/documents/${id}/influence`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ influence_score: influenceScore }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       return await response.json();
     } catch (error) {
-      console.error("Document deletion error:", error);
+      console.error("Error updating document influence:", error);
       throw error;
     }
   },
 };
 
+/**
+ * Client for interacting with response generation API endpoints
+ */
 export const responseClient = {
-  generateResponse: async (query: string, documents: any[]) => {
+  // Generate a response based on documents
+  generateResponse: async (prompt: string, documents: Document[]) => {
     try {
-      // Ensure we're only sending non-excluded documents and including influence scores
-      const processedDocuments = documents
-        .filter(doc => !doc.excluded)
-        .map(doc => ({
-          id: doc.id,
-          name: doc.name,
-          content: doc.content,
-          influence: doc.influenceScore || 0.5,
-          poisoningLevel: doc.poisoningLevel || 0
-        }));
-      
-      console.log(`Sending request with ${processedDocuments.length} documents`, { query, documents: processedDocuments });
-      
-      const response = await fetch(`${API_BASE_URL}/generate-response`, {
+      const response = await fetch(`${API_BASE_URL}/api/generate-response`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, documents: processedDocuments }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt,
+          documents: documents.map(doc => ({
+            id: doc.id,
+            content: doc.content,
+            name: doc.name,
+            influence_score: doc.influenceScore,
+            poisoning_level: doc.poisoningLevel || 0
+          })),
+        }),
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Response generation failed: ${response.status} ${response.statusText}`, errorText);
-        throw new Error(`Response generation failed: ${response.status} ${response.statusText}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log("Response generation succeeded:", data);
-      return data;
+      return await response.json();
     } catch (error) {
       console.error("Error generating response:", error);
       throw error;
@@ -121,80 +123,81 @@ export const responseClient = {
   },
 };
 
+/**
+ * Client for interacting with analysis-related API endpoints
+ */
 export const analysisClient = {
+  // Analyze sentiment of text
   analyzeSentiment: async (text: string) => {
     try {
-      if (!text) {
-        console.warn("Empty text provided for sentiment analysis");
-        return 0;
-      }
-      
-      const response = await fetch(`${API_BASE_URL}/analyze-sentiment`, {
+      const response = await fetch(`${API_BASE_URL}/api/analyze-sentiment`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ text }),
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Sentiment analysis failed: ${response.status} ${response.statusText}`, errorText);
-        throw new Error("Sentiment analysis failed");
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      return data.sentiment_score;
+      return data.sentiment_score || 0;
     } catch (error) {
       console.error("Error analyzing sentiment:", error);
-      return 0;
+      return 0; // Neutral sentiment as fallback
     }
   },
-  
+
+  // Detect bias in text
   detectBias: async (text: string) => {
     try {
-      if (!text) {
-        console.warn("Empty text provided for bias detection");
-        return { political: 0.2 };
-      }
-      
-      const response = await fetch(`${API_BASE_URL}/detect-bias`, {
+      const response = await fetch(`${API_BASE_URL}/api/detect-bias`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ text }),
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Bias detection failed: ${response.status} ${response.statusText}`, errorText);
-        throw new Error("Bias detection failed");
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-      return data.bias_scores;
+      return await response.json();
     } catch (error) {
       console.error("Error detecting bias:", error);
-      return { political: 0.2 };
+      return { bias_scores: { political: 0.2, gender: 0.1 } }; // Fallback values
     }
   },
-  
-  calculateTrustScore: async (baseKnowledgePercentage: number, documentContributions: any[]) => {
+
+  // Calculate trust score based on attribution data
+  calculateTrustScore: async (
+    baseKnowledgePercentage: number,
+    documentContributions: { id: string; name: string; contribution: number }[]
+  ) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/calculate-trust-score`, {
+      const response = await fetch(`${API_BASE_URL}/api/calculate-trust-score`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ baseKnowledgePercentage, documentContributions }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          base_knowledge_percentage: baseKnowledgePercentage,
+          document_contributions: documentContributions,
+        }),
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Trust score calculation failed: ${response.status} ${response.statusText}`, errorText);
-        throw new Error("Trust score calculation failed");
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      return data.trust_score;
+      return data.trust_score || 0.5;
     } catch (error) {
       console.error("Error calculating trust score:", error);
-      return 0.5;
+      return 0.5; // Medium trust as fallback
     }
   },
 };

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { AttributionData } from '@/types';
 
 interface AttributionChartProps {
@@ -28,8 +28,8 @@ const AttributionChart: React.FC<AttributionChartProps> = ({ data }) => {
     }))
   ];
 
-  // Filter out any items with 0 value
-  const filteredData = chartData.filter(item => item.value > 0);
+  // Filter out any items with very low value (< 0.1%) for display clarity
+  const filteredData = chartData.filter(item => item.value > 0.1);
 
   // If there's no meaningful data, don't render the chart
   if (filteredData.length === 0) {
@@ -59,7 +59,7 @@ const AttributionChart: React.FC<AttributionChartProps> = ({ data }) => {
                 outerRadius={80}
                 paddingAngle={2}
                 dataKey="value"
-                label={({ name, percent }) => percent > 0.05 ? `${Math.round(percent * 100)}%` : ''}
+                label={({ name, value }) => value > 5 ? `${Math.round(value)}%` : ''}
                 labelLine={false}
               >
                 {filteredData.map((entry, index) => (
@@ -70,7 +70,7 @@ const AttributionChart: React.FC<AttributionChartProps> = ({ data }) => {
                 formatter={(value: any) => {
                   return [formatTooltipValue(value), 'Contribution'];
                 }}
-                labelFormatter={(index) => filteredData[index].name}
+                labelFormatter={(index: number) => filteredData[index].name}
               />
             </PieChart>
           </ResponsiveContainer>
