@@ -10,6 +10,8 @@ from textblob import TextBlob
 from .database import SessionLocal, engine, Base
 from .models import Document, ChatSession, Message
 from datetime import datetime
+import sqlite3
+import sqlalchemy.exc
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -30,6 +32,16 @@ client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 # Ensure database tables are created
 Base.metadata.create_all(bind=engine)
+
+# Try to add influence_score column if it doesn't exist
+try:
+    with engine.connect() as conn:
+        conn.execute("ALTER TABLE documents ADD COLUMN influence_score FLOAT DEFAULT 0.5")
+        print("Added influence_score column to documents table")
+except (sqlite3.OperationalError, sqlalchemy.exc.OperationalError) as e:
+    # Column might already exist
+    if "duplicate column name" not in str(e).lower():
+        print(f"Note: {e}")
 
 # Dependency for database session
 def get_db():
@@ -83,18 +95,23 @@ async def upload_document_alt(file: UploadFile = File(...), db: Session = Depend
 # Get all documents
 @app.get("/documents")
 def get_documents(db: Session = Depends(get_db)):
-    documents = db.query(Document).all()
-    return [
-        {
-            "id": str(doc.id),
-            "name": doc.name,
-            "content": doc.content,
-            "sentiment_score": doc.sentiment_score,
-            "influence_score": getattr(doc, "influence_score", 0.5),  # Safely get influence score
-            "type": "pdf" if doc.name.endswith(".pdf") else "text"
-        }
-        for doc in documents
-    ]
+    try:
+        documents = db.query(Document).all()
+        return [
+            {
+                "id": str(doc.id),
+                "name": doc.name,
+                "content": doc.content,
+                "sentiment_score": doc.sentiment_score,
+                "influence_score": getattr(doc, "influence_score", 0.5),  # Safely get influence score
+                "type": "pdf" if doc.name.endswith(".pdf") else "text"
+            }
+            for doc in documents
+        ]
+    except Exception as e:
+        print(f"Error in get_documents: {e}")
+        # Return empty list instead of throwing error
+        return []
 
 # Delete document
 @app.delete("/delete-document/{document_id}")
@@ -115,14 +132,19 @@ def update_influence(document_id: str, influence_data: dict, db: Session = Depen
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
     
-    document.influence_score = influence_data.get("influence")
-    db.commit()
-    db.refresh(document)
-    
-    return {
-        "id": str(document.id),
-        "influence_score": document.influence_score
-    }
+    try:
+        document.influence_score = influence_data.get("influence")
+        db.commit()
+        db.refresh(document)
+        
+        return {
+            "id": str(document.id),
+            "influence_score": document.influence_score
+        }
+    except Exception as e:
+        print(f"Error in update_influence: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update influence: {str(e)}")
 
 # Extract PDF text
 @app.post("/extract-pdf-text")
@@ -306,19 +328,24 @@ async def save_message(data: dict, db: Session = Depends(get_db)):
     # Create message with timestamp here, don't rely on data
     current_time = datetime.now().isoformat()
     
-    new_message = Message(
-        chat_session_id=chat_session_id,
-        role=role,
-        content=content,
-        timestamp=current_time
-    )
-    db.add(new_message)
-    db.commit()
-    db.refresh(new_message)
-    
-    return {
-        "id": str(new_message.id),
-        "role": new_message.role,
-        "content": new_message.content,
-        "timestamp": new_message.timestamp
-    }
+    try:
+        new_message = Message(
+            chat_session_id=chat_session_id,
+            role=role,
+            content=content,
+            timestamp=current_time
+        )
+        db.add(new_message)
+        db.commit()
+        db.refresh(new_message)
+        
+        return {
+            "id": str(new_message.id),
+            "role": new_message.role,
+            "content": new_message.content,
+            "timestamp": new_message.timestamp
+        }
+    except Exception as e:
+        db.rollback()
+        print(f"Error saving message: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save message: {str(e)}")

@@ -1,3 +1,4 @@
+
 import { Document } from "@/types";
 import { documentClient } from "@/utils/apiClients";
 import { v4 as uuidv4 } from 'uuid';
@@ -10,7 +11,7 @@ export const mapDbDocumentToDocument = (dbDocument: any): Document => {
     type: dbDocument.type || (dbDocument.name?.endsWith('.pdf') || dbDocument.filename?.endsWith('.pdf') ? 'pdf' : 'text'),
     content: dbDocument.content || "",
     size: dbDocument.size || undefined,
-    influenceScore: dbDocument.influence_score || 0.5,
+    influenceScore: dbDocument.influence_score !== undefined ? dbDocument.influence_score : 0.5,
     poisoningLevel: 0, // Default values for new properties
     excluded: false,
   };
