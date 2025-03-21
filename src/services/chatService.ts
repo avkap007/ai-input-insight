@@ -24,31 +24,66 @@ export const createChatSession = async (title?: string): Promise<string> => {
 
 // Get all messages for a chat session
 export const getMessages = async (chatSessionId: string): Promise<Message[]> => {
-  const response = await fetch(`http://127.0.0.1:8000/api/chat/messages?chatSessionId=${chatSessionId}`);
-  if (!response.ok) {
-    throw new Error("Error fetching messages");
+  try {
+    const response = await fetch(`http://127.0.0.1:8000/api/chat/messages?chatSessionId=${chatSessionId}`);
+    if (!response.ok) {
+      throw new Error("Error fetching messages");
+    }
+    const messages = await response.json();
+    
+    // Convert ISO string timestamps to Date objects
+    return messages.map((msg: any) => ({
+      ...msg,
+      timestamp: new Date(msg.timestamp)
+    }));
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    return [];
   }
-  return await response.json();
 };
 
 // Save a message
 export const saveMessage = async (chatSessionId: string, message: Omit<Message, "id">): Promise<Message> => {
-  const response = await fetch("http://127.0.0.1:8000/api/chat/messages", {
-    method: "POST",
-    body: JSON.stringify({
-      chatSessionId,
+  try {
+    const response = await fetch("http://127.0.0.1:8000/api/chat/messages", {
+      method: "POST",
+      body: JSON.stringify({
+        chatSessionId,
+        role: message.role,
+        content: message.content,
+        timestamp: message.timestamp.toISOString(),
+      }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!response.ok) {
+      throw new Error("Error saving message");
+    }
+
+    const savedMessage = await response.json();
+    return {
+      ...savedMessage,
+      timestamp: new Date(savedMessage.timestamp),
+      attributions: message.attributions || [],
+      attributionData: message.attributionData,
+      analysisData: message.analysisData
+    };
+  } catch (error) {
+    console.error("Error saving message:", error);
+    
+    // If there's an error with the API, create a client-side message with a unique ID
+    // This ensures the UI still works even if message saving fails
+    const fallbackId = `local-${Date.now()}`;
+    return {
+      id: fallbackId,
       role: message.role,
       content: message.content,
-      timestamp: message.timestamp.toISOString(),
-    }),
-    headers: { "Content-Type": "application/json" },
-  });
-
-  if (!response.ok) {
-    throw new Error("Error saving message");
+      timestamp: message.timestamp,
+      attributions: message.attributions || [],
+      attributionData: message.attributionData,
+      analysisData: message.analysisData
+    };
   }
-
-  return await response.json();
 };
 
 // Save token attributions for a message

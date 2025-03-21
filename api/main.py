@@ -9,11 +9,12 @@ import os
 from textblob import TextBlob
 from .database import SessionLocal, engine, Base
 from .models import Document, ChatSession, Message
+from datetime import datetime
 
 # Initialize FastAPI app
 app = FastAPI()
 
-# Add CORS middleware
+# Add CORS middleware with proper configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:8080"],  # Frontend origin
@@ -56,12 +57,23 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
     sentiment = TextBlob(content).sentiment.polarity
 
     # Save document to database
-    new_doc = Document(name=file.filename, content=content, sentiment_score=sentiment)
+    new_doc = Document(
+        name=file.filename, 
+        content=content, 
+        sentiment_score=sentiment,
+        influence_score=0.5  # Default influence score
+    )
     db.add(new_doc)
     db.commit()
     db.refresh(new_doc)
 
-    return {"filename": file.filename, "content": content, "sentiment_score": sentiment, "id": new_doc.id}
+    return {
+        "filename": file.filename, 
+        "content": content, 
+        "sentiment_score": sentiment, 
+        "id": str(new_doc.id),
+        "influence_score": new_doc.influence_score
+    }
 
 # Also provide the upload-document endpoint to match frontend calls
 @app.post("/upload-document")
@@ -78,7 +90,7 @@ def get_documents(db: Session = Depends(get_db)):
             "name": doc.name,
             "content": doc.content,
             "sentiment_score": doc.sentiment_score,
-            "influence_score": doc.influence_score or 0.5,
+            "influence_score": getattr(doc, "influence_score", 0.5),  # Safely get influence score
             "type": "pdf" if doc.name.endswith(".pdf") else "text"
         }
         for doc in documents
@@ -107,7 +119,10 @@ def update_influence(document_id: str, influence_data: dict, db: Session = Depen
     db.commit()
     db.refresh(document)
     
-    return document
+    return {
+        "id": str(document.id),
+        "influence_score": document.influence_score
+    }
 
 # Extract PDF text
 @app.post("/extract-pdf-text")
@@ -284,7 +299,8 @@ async def save_message(data: dict, db: Session = Depends(get_db)):
     new_message = Message(
         chat_session_id=chat_session_id,
         role=role,
-        content=content
+        content=content,
+        timestamp=datetime.now()  # Set timestamp here to avoid None
     )
     db.add(new_message)
     db.commit()

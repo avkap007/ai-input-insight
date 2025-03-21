@@ -1,11 +1,8 @@
 
 import React from 'react';
-import { File, FileText, X, AlertTriangle, InfoIcon } from 'lucide-react';
+import { X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Document } from '@/types';
-import { Slider } from "@/components/ui/slider";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface DocumentItemProps {
   document: Document;
@@ -16,186 +13,121 @@ interface DocumentItemProps {
   showAdvancedControls?: boolean;
 }
 
-const DocumentItem: React.FC<DocumentItemProps> = ({ 
-  document, 
-  onRemove, 
+const DocumentItem: React.FC<DocumentItemProps> = ({
+  document,
+  onRemove,
   onInfluenceChange,
   onPoisoningChange,
   onExclusionChange,
   showAdvancedControls = false
 }) => {
-  const handleInfluenceChange = (value: number[]) => {
-    onInfluenceChange(document.id, value[0]);
-  };
-
-  const handlePoisoningChange = (value: number[]) => {
-    if (onPoisoningChange) {
-      onPoisoningChange(document.id, value[0]);
+  const { id, name, type, size, influenceScore = 0.5, poisoningLevel = 0, excluded = false } = document;
+  
+  const formatSize = (bytes?: number): string => {
+    if (!bytes) return '';
+    const kb = bytes / 1024;
+    if (kb < 1024) {
+      return `${Math.round(kb * 10) / 10} KB`;
     }
+    const mb = kb / 1024;
+    return `${Math.round(mb * 10) / 10} MB`;
   };
 
-  const handleExclusionChange = (checked: boolean) => {
-    if (onExclusionChange) {
-      onExclusionChange(document.id, checked);
+  const getIcon = () => {
+    if (type === 'pdf') {
+      return <i className="fas fa-file-pdf text-red-500 mr-2"></i>;
     }
+    return <i className="fas fa-file-alt text-blue-500 mr-2"></i>;
   };
-
-  // Calculate the influence percentage for display
-  const influencePercentage = Math.round((document.influenceScore || 0) * 100);
 
   return (
-    <div className={`p-3 rounded-lg border ${document.excluded ? 'border-red-200 bg-red-50' : 'border-gray-100 bg-gray-50'} flex flex-col gap-2 group animate-scale-in`}>
-      <div className="flex items-center justify-between overflow-hidden">
-        <div className="flex items-center gap-2.5 overflow-hidden">
-          <div className="shrink-0">
-            {document.type === 'pdf' ? (
-              <File size={16} className="text-red-500" />
+    <div className={cn(
+      "bg-white rounded-lg border border-gray-200 shadow-sm p-3 transition-all",
+      excluded ? "opacity-50" : ""
+    )}>
+      <div className="flex items-start justify-between">
+        <div className="flex items-center">
+          <div className="mr-2">
+            {type === 'pdf' ? (
+              <svg className="w-8 h-8 text-red-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M8 12H16M12 8V16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             ) : (
-              <FileText size={16} className="text-blue-500" />
-            )}
-            {document.poisoningLevel > 0 && (
-              <AlertTriangle size={14} className="text-amber-500 mt-1" />
+              <svg className="w-8 h-8 text-blue-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M8 13H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M8 17H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             )}
           </div>
-          <div className="overflow-hidden">
-            <p className={`text-sm font-medium truncate ${document.excluded ? 'line-through text-gray-400' : ''}`}>
-              {document.name}
-            </p>
-            <p className="text-xs text-gray-500 truncate">
-              {document.type === 'quote' 
-                ? document.content.substring(0, 50) + (document.content.length > 50 ? '...' : '')
-                : document.size ? `${Math.round(document.size / 1024)} KB` : 'Text snippet'}
-            </p>
+          <div>
+            <h3 className="font-medium text-gray-900 truncate max-w-[200px]" title={name}>{name}</h3>
+            {size && <p className="text-xs text-gray-500">{formatSize(size)}</p>}
           </div>
         </div>
-        <button 
-          onClick={() => onRemove(document.id)}
-          className="p-1 rounded-full hover:bg-gray-200 transition-all"
+        <button
+          onClick={() => onRemove(id)}
+          className="text-gray-400 hover:text-gray-500 transition-colors"
           aria-label="Remove document"
         >
-          <X size={14} className="text-gray-500" />
+          <X size={16} />
         </button>
       </div>
       
-      <div className="w-full">
-        <div className="flex justify-between items-center mb-1">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Label htmlFor={`influence-${document.id}`} className="text-xs text-gray-500 flex items-center cursor-help">
-                  Influence: {influencePercentage}%
-                  <InfoIcon size={12} className="ml-1 text-gray-400" />
-                </Label>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <div className="space-y-2">
-                  <p className="text-xs font-medium">Document Influence Control</p>
-                  <p className="text-xs">
-                    Controls how much this document impacts the AI's response. Higher values give this document more weight in the final output.
-                  </p>
-                  <ul className="text-xs list-disc pl-4 space-y-1">
-                    <li>100%: Maximum influence - strongly shapes the response</li>
-                    <li>50%: Moderate influence - balanced with other documents</li>
-                    <li>0%: Minimal influence - barely affects the output</li>
-                  </ul>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <span className="text-xs font-medium">{influencePercentage}%</span>
+      <div className="mt-3 space-y-3">
+        <div>
+          <div className="flex justify-between mb-1">
+            <label htmlFor={`influence-${id}`} className="text-xs font-medium text-gray-700">
+              Influence: {Math.round(influenceScore * 100)}%
+            </label>
+          </div>
+          <input
+            id={`influence-${id}`}
+            type="range"
+            min="0"
+            max="100"
+            value={Math.round(influenceScore * 100)}
+            onChange={(e) => onInfluenceChange(id, parseInt(e.target.value))}
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+          />
         </div>
-        <Slider
-          id={`influence-${document.id}`}
-          defaultValue={[influencePercentage]}
-          value={[influencePercentage]}
-          max={100}
-          step={1}
-          onValueChange={handleInfluenceChange}
-          className="w-full"
-        />
-      </div>
-
-      {showAdvancedControls && (
-        <>
-          {/* Data Poisoning Control */}
-          <div className="w-full mt-1">
-            <div className="flex justify-between items-center mb-1">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Label htmlFor={`poisoning-${document.id}`} className="text-xs text-gray-500 flex items-center cursor-help">
-                      Data Poisoning: {Math.round((document.poisoningLevel || 0) * 100)}%
-                      <AlertTriangle size={12} className="ml-1 text-amber-500" />
-                    </Label>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium">Data Poisoning Simulation</p>
-                      <p className="text-xs">
-                        <strong>Simulates manipulated or adversarial data.</strong> Higher values introduce more perturbations to document content before it reaches the AI model.
-                      </p>
-                      <p className="text-xs">
-                        In AI systems, data poisoning is a technique where malicious actors intentionally modify training data to manipulate model outputs or create backdoors. Common approaches include:
-                      </p>
-                      <ul className="text-xs list-disc pl-4 space-y-1">
-                        <li><strong>Label flipping:</strong> Changing correct labels to incorrect ones</li>
-                        <li><strong>Content manipulation:</strong> Subtly altering text to trigger specific behaviors</li>
-                        <li><strong>Backdoor insertion:</strong> Adding patterns that can later be exploited</li>
-                      </ul>
-                      <p className="text-xs text-amber-600 font-medium">
-                        For educational purposes only
-                      </p>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <span className="text-xs font-medium">{Math.round((document.poisoningLevel || 0) * 100)}%</span>
+        
+        {showAdvancedControls && onPoisoningChange && (
+          <div>
+            <div className="flex justify-between mb-1">
+              <label htmlFor={`poisoning-${id}`} className="text-xs font-medium text-gray-700">
+                Poisoning: {Math.round(poisoningLevel * 100)}%
+              </label>
             </div>
-            <Slider
-              id={`poisoning-${document.id}`}
-              defaultValue={[Math.round((document.poisoningLevel || 0) * 100)]}
-              value={[Math.round((document.poisoningLevel || 0) * 100)]}
-              max={100}
-              step={1}
-              onValueChange={handlePoisoningChange}
-              className="w-full"
+            <input
+              id={`poisoning-${id}`}
+              type="range"
+              min="0"
+              max="100"
+              value={Math.round(poisoningLevel * 100)}
+              onChange={(e) => onPoisoningChange(id, parseInt(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-600"
             />
           </div>
-
-          {/* Data Strike / Exclusion Toggle */}
-          <div className="flex items-center justify-between mt-1">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Label htmlFor={`exclude-${document.id}`} className="text-xs text-gray-500 flex items-center cursor-help">
-                    Exclude Document
-                    <AlertTriangle size={12} className="ml-1 text-amber-500" />
-                  </Label>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium">Document Exclusion ("Data Strike")</p>
-                    <p className="text-xs">
-                      <strong>Simulates complete data withdrawal</strong> by removing this document from the AI's knowledge base.
-                    </p>
-                    <p className="text-xs">
-                      This represents the concept of "data sovereignty" - the idea that individuals or groups should have control over their data and can withdraw it from AI systems.
-                    </p>
-                    <p className="text-xs">
-                      Researchers have explored "data strikes" as a form of collective action against AI systems. When enabled, the document will be completely ignored during response generation.
-                    </p>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <Switch 
-              id={`exclude-${document.id}`} 
-              checked={document.excluded || false}
-              onCheckedChange={handleExclusionChange}
+        )}
+        
+        {showAdvancedControls && onExclusionChange && (
+          <div className="flex items-center justify-between">
+            <label htmlFor={`exclude-${id}`} className="text-xs font-medium text-gray-700">
+              Exclude from context
+            </label>
+            <input
+              id={`exclude-${id}`}
+              type="checkbox"
+              checked={excluded}
+              onChange={(e) => onExclusionChange(id, e.target.checked)}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 };
