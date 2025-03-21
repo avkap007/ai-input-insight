@@ -34,7 +34,7 @@ export const detectBias = async (text: string): Promise<Record<string, number>> 
 // Trust score calculation
 export const calculateTrustScore = async (
   baseKnowledgePercentage: number,
-  documentContributions: { contribution: number }[]
+  documentContributions: { id: string; name: string; contribution: number }[]
 ): Promise<number> => {
   try {
     return await analysisClient.calculateTrustScore(baseKnowledgePercentage, documentContributions);
@@ -94,7 +94,7 @@ const localDetectBias = (text: string): Record<string, number> => {
 
 const localCalculateTrustScore = (
   baseKnowledgePercentage: number,
-  documentContributions: { contribution: number }[]
+  documentContributions: { id: string; name: string; contribution: number }[]
 ): number => {
   // If only using base knowledge, trust is moderate
   if (documentContributions.length === 0) {
