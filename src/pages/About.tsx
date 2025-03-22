@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Header from '@/components/Header';
 import { ArrowLeft } from 'lucide-react';
@@ -30,31 +31,34 @@ const About: React.FC = () => {
             </p>
             <ul className="list-disc pl-6 space-y-2 mt-4">
               <li>Visualizing how uploaded content changes AI responses</li>
-              <li>Understanding document-level influence with sliders</li>
-              <li>Highlighting token attribution to specific documents</li>
-              <li>Running post-generation analysis (sentiment, bias, trust)</li>
+              <li>Understanding document-level influence with adjustable sliders</li>
+              <li>Highlighting document attribution in generated responses</li>
+              <li>Performing post-generation analysis (sentiment, bias, trust)</li>
             </ul>
           </section>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-bold mb-4">Design Philosophy</h2>
+            <h2 className="text-2xl font-bold mb-4">How It Works</h2>
             <p>
-              Our goal was to demystify the "black box" nature of LLMs. We allow you to upload text or PDFs and tweak how much each one matters. Once the AI responds, you can see which source contributed to which part of the answer.
+              Our system allows you to upload text or PDFs and adjust how much each document matters when generating responses. The backend processes your documents and uses the Anthropic Claude API to generate responses based on your query and the uploaded documents.
+            </p>
+            <p className="mt-4">
+              After generating a response, we analyze it using several NLP techniques:
             </p>
             <ul className="list-disc pl-6 space-y-2 mt-4">
-              <li><strong>Minimal, modular UI:</strong> Designed for ease and clarity</li>
-              <li><strong>Research-oriented controls:</strong> Supports exclusion, poisoning, influence</li>
-              <li><strong>Transparency overlays:</strong> Every response is annotated and analyzed</li>
+              <li><strong>Sentiment analysis:</strong> Using TextBlob to assess the emotional tone</li>
+              <li><strong>Bias detection:</strong> Identifying potential biases in the generated text</li>
+              <li><strong>Trust scoring:</strong> Calculating how much the response can be trusted based on document influence</li>
             </ul>
           </section>
 
           <section className="mb-8">
             <h2 className="text-2xl font-bold mb-4">Tech Stack</h2>
             <ul className="list-disc pl-6 space-y-2">
-              <li><strong>Frontend:</strong> React + Tailwind + shadcn/ui</li>
-              <li><strong>Backend:</strong> FastAPI</li>
-              <li><strong>NLP:</strong> NLTK, VADER, TextBlob, Biaslyze (WIP)</li>
-              <li><strong>Deployment:</strong> Local for now, working on Render/Vercel next</li>
+              <li><strong>Frontend:</strong> React + TypeScript, Tailwind CSS, shadcn/ui</li>
+              <li><strong>Backend:</strong> FastAPI (Python), SQLite database</li>
+              <li><strong>NLP:</strong> TextBlob, VADER, HateSonar</li>
+              <li><strong>AI:</strong> Anthropic Claude API</li>
             </ul>
           </section>
 

@@ -1,3 +1,4 @@
+
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 import pdfplumber
@@ -18,7 +19,7 @@ app = FastAPI()
 # CORS middleware for frontend connection
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8080"],
+    allow_origins=["*"],  # Allow all origins for testing
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

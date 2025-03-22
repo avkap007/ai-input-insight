@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -30,6 +31,9 @@ const DocumentItem: React.FC<DocumentItemProps> = ({
     return `${Math.round(mb * 10) / 10} MB`;
   };
 
+  // Truncate long filenames for display
+  const displayName = name.length > 20 ? name.substring(0, 18) + '...' : name;
+
   return (
     <div className={cn(
       "bg-white rounded-lg border border-gray-200 shadow-sm p-3 transition-all flex flex-col gap-2",
@@ -42,9 +46,16 @@ const DocumentItem: React.FC<DocumentItemProps> = ({
           </div>
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium text-gray-900 truncate" title={name}>{name}</div>
+          <div className="text-sm font-medium text-gray-900 truncate" title={name}>{displayName}</div>
           {size && <div className="text-xs text-gray-500 mt-0.5">{formatSize(size)}</div>}
         </div>
+        <button
+          onClick={() => onRemove(id)}
+          className="text-gray-400 hover:text-gray-600 transition-colors self-start ml-auto flex-shrink-0"
+          aria-label="Remove document"
+        >
+          <X size={16} />
+        </button>
       </div>
 
       <div className="flex flex-col gap-1">
@@ -97,14 +108,6 @@ const DocumentItem: React.FC<DocumentItemProps> = ({
           )}
         </div>
       )}
-
-      <button
-        onClick={() => onRemove(id)}
-        className="text-gray-400 hover:text-gray-600 transition-colors self-end"
-        aria-label="Remove document"
-      >
-        <X size={16} />
-      </button>
     </div>
   );
 };

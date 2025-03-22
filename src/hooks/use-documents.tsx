@@ -98,7 +98,7 @@ export const useDocuments = () => {
     }
   };
 
-  // Handle influence update - Fix to properly call API and update UI
+  // Handle influence update
   const handleUpdateDocumentInfluence = async (id: string, influenceScore: number) => {
     try {
       console.log(`Updating document ${id} influence to ${influenceScore}`);

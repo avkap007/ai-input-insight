@@ -1,161 +1,150 @@
-# 🧠 AI Input Insight
 
-**AI Input Insight** is a visual debugging and transparency tool for understanding how large language models (LLMs) synthesize responses based on different document inputs.
+# AI Input Insight
 
-It supports:
-- 📄 Uploading PDFs or entering custom snippets  
-- 🌺 Adjusting influence and data poisoning levels  
-- 💬 Analyzing sentiment, bias, and trust scoring  
-- 🧩 Token attribution visualization from sources  
+A tool to explore how document inputs influence AI responses by visualizing document-level influence and attribution.
 
----
+## Overview
 
-## 🌐 Project Access
+This application allows you to:
+- Upload documents (PDF, TXT) or add text directly
+- Adjust influence levels of each document
+- Generate AI responses based on your documents and query
+- Visualize which parts of the response came from which documents
+- Analyze sentiment, bias, and trustworthiness of responses
 
-> **For reference (old preview link):**  
-
----
-
-## 🛠️ Tech Stack
+## Technical Architecture
 
 ### Frontend
-- [React](https://react.dev/) + TypeScript  
-- [Tailwind CSS](https://tailwindcss.com/)  
-- [shadcn/ui](https://ui.shadcn.com/)  
-- [Vite](https://vitejs.dev/)  
-- [Recharts](https://recharts.org/en-US) for data visualization  
+- React + TypeScript
+- Tailwind CSS for styling
+- shadcn/ui component library
+- Vite for development server
 
 ### Backend
-- [FastAPI](https://fastapi.tiangolo.com/)  
-- Python 3.9  
-- NLP tools:
-  - **Sentiment**: NLTK / VADER  
-  - **Bias Detection**: TextBlob / Biaslyze *(planned)*  
-  - **Trust Score**: Custom heuristics  
-- [Supabase](https://supabase.com/) (PostgreSQL) for data storage  
+- FastAPI (Python)
+- SQLite database (via SQLAlchemy)
+- Anthropic Claude API for generating responses
+- NLP libraries for analysis (TextBlob, VADER, HateSonar)
 
----
+## Getting Started
 
-## 🚧 Local Development Setup
+### Prerequisites
+- Node.js (v16+)
+- Python (v3.8+)
+- An Anthropic API key
 
-### 1. Clone the Repository
+### Installation
 
-```bash
-git clone <YOUR_GIT_REPO_URL>
-cd ai-input-insight
-```
+1. Clone the repository
+   ```bash
+   git clone https://github.com/yourusername/ai-input-insight.git
+   cd ai-input-insight
+   ```
 
-### 2. Frontend Setup
+2. Install frontend dependencies
+   ```bash
+   npm install
+   ```
 
-```bash
-npm install
-npm run dev
-```
+3. Create and activate a Python virtual environment
+   ```bash
+   python -m venv fastapi-env
+   source fastapi-env/bin/activate  # On Windows: fastapi-env\Scripts\activate
+   ```
 
-> Runs on `http://localhost:5173`
+4. Install backend dependencies
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-### 3. Backend Setup (FastAPI)
+5. Create a `.env` file in the `api` directory with your Anthropic API key:
+   ```
+   ANTHROPIC_API_KEY=your_api_key_here
+   ```
 
-It’s recommended to use a virtual environment:
+### Running the Application
 
-```bash
-cd backend  # or wherever `main.py` lives
-python3 -m venv env
-source env/bin/activate
-pip install -r requirements.txt
-```
+1. Start the backend server:
+   ```bash
+   cd api
+   uvicorn main:app --reload
+   ```
 
-Run the API server:
+2. In a new terminal, start the frontend development server:
+   ```bash
+   npm run dev
+   ```
 
-```bash
-uvicorn main:app --reload
-```
+3. Open your browser and navigate to `http://localhost:5173`
 
-> Runs on `http://localhost:8000`
+## Features
 
----
+### Document Management
+- Upload PDFs and text files
+- Add text snippets directly
+- Adjust document influence with sliders
+- Exclude documents from context
+- (Advanced) Simulate poisoning of documents
 
-## 📦 Project Structure
+### AI Response Generation
+- Query the AI based on your documents
+- Visualize which parts of the response are attributed to which documents
+- See the relative influence of each document on the response
 
-```
-/src
-  ├── components/       # All UI components
-  ├── hooks/            # React hooks
-  ├── utils/            # Utility + analysis logic
-  ├── services/         # API clients
-  ├── types/            # Shared types
-  └── pages/            # Route views like /about
+### Analysis
+- Sentiment analysis of AI responses
+- Bias detection
+- Trust score calculation
 
-/backend
-  └── main.py           # FastAPI entrypoint
-```
+## Adding New NLP Libraries
 
----
+To extend the application with additional NLP capabilities:
 
-## 🧪 Analysis Features
+1. Add the library to `requirements.txt`
+   ```
+   new_library_name==version_number
+   ```
 
-- 🔍 **Influence Slider**: Adjust how much each document affects the response  
-- 🧪 **Data Poisoning**: Simulate adversarial input impact  
-- 🧠 **Token Attribution**: Map generated text back to documents  
-- 📈 **Charts**: Source influence and sentiment visualizations  
-- ✅ **Trust Score**: Evaluate response reliability  
+2. Import and initialize the library in `api/main.py`
+   ```python
+   import new_library_name
+   # Initialize as needed
+   ```
 
----
+3. Create or modify endpoints to use the new library
+   ```python
+   @app.post("/new-analysis-endpoint")
+   async def new_analysis(data: dict):
+       text = data.get("text", "")
+       result = new_library_name.analyze(text)
+       return {"analysis_result": result}
+   ```
 
-## 📟 Backend `requirements.txt`
+4. Update the frontend to call the new endpoint
 
-Ensure the following are present in `requirements.txt`:
+### Example: Adding HateSonar
 
-```
-fastapi
-uvicorn
-python-multipart
-nltk
-textblob
-vaderSentiment
-# optional/planned:
-# biaslyze
-```
+1. Add to requirements.txt:
+   ```
+   hatesonar==0.0.5
+   ```
 
-Generate the file with:
+2. Implement in main.py:
+   ```python
+   from hatesonar import Sonar
+   
+   sonar = Sonar()
+   
+   @app.post("/detect-hate-speech")
+   async def detect_hate_speech(data: dict):
+       text = data.get("text", "")
+       if not text:
+           return {"hate_speech_result": {}, "error": "No text provided"}
+       
+       result = sonar.ping(text)
+       return {"hate_speech_result": result}
+   ```
 
-```bash
-pip freeze > requirements.txt
-```
+## License
 
----
-
-## 🚀 Deployment Plans
-
-The app is currently being developed locally. Due to the large size (~400+ MB with `node_modules`), deployment is temporarily paused.
-
-**Next steps:**
-- Migrate backend to a serverless deployment (e.g., Supabase Functions or Railway)  
-- Optimize frontend bundle for Vercel or Netlify  
-- Attach a hosted PostgreSQL DB (or Supabase instance)  
-
----
-
-## 🙏 Acknowledgments
-
-This project was developed as a part of **CMPT 415 Directed Studies** under the supervision of:
-
-- Dr. Nicholas Vincent  
-- Dr. Margaret Grant  
-Simon Fraser University  
-
----
-
-## 📌 Future Work
-
-- Add Biaslyze integration for deeper bias analysis  
-- Support token-level hover-to-source explanations  
-- Exportable attribution reports (PDF/CSV)  
-- Deploy full-stack version with persistent DB  
-
----
-
-## 📬 Contact
-
-Built with love by **Avni Kapoor**  
-✉️ `avnikapooredu@email.com` 
+This project is licensed under the MIT License - see the LICENSE file for details.

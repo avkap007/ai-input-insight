@@ -1,4 +1,3 @@
-
 import { AttributionData, Document } from "@/types";
 
 // Base URL for API endpoints
@@ -11,14 +10,11 @@ export const documentClient = {
   // Get all documents
   getDocuments: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/documents`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      return data;
+      const response = await fetch('/documents');
+      if (!response.ok) throw new Error('Failed to fetch documents');
+      return await response.json();
     } catch (error) {
-      console.error("Error fetching documents:", error);
+      console.error('Error fetching documents:', error);
       throw error;
     }
   },
@@ -27,63 +23,51 @@ export const documentClient = {
   uploadDocument: async (file: File) => {
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append('file', file);
 
-      const response = await fetch(`${API_BASE_URL}/upload`, {
-        method: "POST",
+      const response = await fetch('/upload-document', {
+        method: 'POST',
         body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
+      if (!response.ok) throw new Error('Failed to upload document');
       return await response.json();
     } catch (error) {
-      console.error("Error uploading document:", error);
+      console.error('Error uploading document:', error);
       throw error;
     }
   },
 
-  // Delete a document - Fixed to use the correct endpoint
+  // Delete a document
   deleteDocument: async (id: string) => {
     try {
-      // Use /delete-document/:id instead of /documents/:id
-      const response = await fetch(`${API_BASE_URL}/delete-document/${id}`, {
-        method: "DELETE",
+      const response = await fetch(`/delete-document/${id}`, {
+        method: 'DELETE',
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return true;
+      if (!response.ok) throw new Error('Failed to delete document');
+      return await response.json();
     } catch (error) {
-      console.error("Error deleting document:", error);
+      console.error('Error deleting document:', error);
       throw error;
     }
   },
 
-  // Update document influence score - Fixed to use the correct endpoint
+  // Update document influence
   updateDocumentInfluence: async (id: string, influenceScore: number) => {
     try {
-      console.log(`Making API call to update document ${id} influence to ${influenceScore}`);
-      // Use /update-influence/:id instead of /documents/:id/influence
-      const response = await fetch(`${API_BASE_URL}/update-influence/${id}`, {
-        method: "PATCH",
+      const response = await fetch(`/update-influence/${id}`, {
+        method: 'PATCH',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ influence: influenceScore }),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
+      if (!response.ok) throw new Error('Failed to update document influence');
       return await response.json();
     } catch (error) {
-      console.error("Error updating document influence:", error);
+      console.error('Error updating document influence:', error);
       throw error;
     }
   },
@@ -102,12 +86,12 @@ export const responseClient = {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          query: prompt, // Changed from 'prompt' to 'query' to match backend
+          query: prompt,
           documents: documents.map(doc => ({
             id: doc.id,
             content: doc.content,
             name: doc.name,
-            influence: doc.influenceScore, // Changed from influence_score to match backend
+            influence: doc.influenceScore,
             poisoning_level: doc.poisoningLevel || 0,
             excluded: doc.excluded || false
           })),
