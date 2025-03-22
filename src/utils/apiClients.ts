@@ -10,7 +10,7 @@ export const documentClient = {
   // Get all documents
   getDocuments: async () => {
     try {
-      const response = await fetch('/documents');
+      const response = await fetch(`${API_BASE_URL}/documents`);
       if (!response.ok) throw new Error('Failed to fetch documents');
       return await response.json();
     } catch (error) {
@@ -25,7 +25,7 @@ export const documentClient = {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('/upload-document', {
+      const response = await fetch(`${API_BASE_URL}/upload-document`, {
         method: 'POST',
         body: formData,
       });
@@ -41,7 +41,7 @@ export const documentClient = {
   // Delete a document
   deleteDocument: async (id: string) => {
     try {
-      const response = await fetch(`/delete-document/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/delete-document/${id}`, {
         method: 'DELETE',
       });
 
@@ -56,7 +56,7 @@ export const documentClient = {
   // Update document influence
   updateDocumentInfluence: async (id: string, influenceScore: number) => {
     try {
-      const response = await fetch(`/update-influence/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/update-influence/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

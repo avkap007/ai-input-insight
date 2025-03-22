@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 import pdfplumber
@@ -12,6 +11,20 @@ from .database import SessionLocal, engine, Base
 from .models import Document, ChatSession, Message
 from datetime import datetime
 import sqlalchemy.exc
+from .services.analysis_service import AnalysisService
+from pydantic import BaseModel
+from typing import List, Dict
+
+# Add Pydantic models here at the top
+class SentimentRequest(BaseModel):
+    text: str
+
+class BiasRequest(BaseModel):
+    text: str
+
+class TrustScoreRequest(BaseModel):
+    baseKnowledgePercentage: float
+    documentContributions: List[Dict]
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -52,6 +65,9 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# Initialize the service
+analysis_service = AnalysisService()
 
 @app.get("/")
 def home():
@@ -176,6 +192,16 @@ async def generate_response(request_data: dict):
 
             generated_text = response.content[0].text
 
+            # Add analysis of the generated text
+            sentiment_score = analysis_service.analyze_sentiment(generated_text)
+            bias_scores = analysis_service.detect_bias(generated_text)
+            trust_score = analysis_service.calculate_trust_score(
+                40,  # baseKnowledge percentage
+                [{"id": str(doc.id), "name": doc.name, "contribution": next(
+                    (d for d in request_data["documents"] if d["id"] == str(doc.id)), {}
+                ).get("influence", 0.5) * 100} for doc in documents]
+            )
+
             attribution_data = {
                 "baseKnowledge": 40,
                 "documents": [
@@ -197,7 +223,12 @@ async def generate_response(request_data: dict):
             return {
                 "generated_text": generated_text,
                 "attributions": [],
-                "attributionData": attribution_data
+                "attributionData": attribution_data,
+                "analysisData": {
+                    "sentiment": sentiment_score,
+                    "bias": bias_scores,
+                    "trustScore": trust_score
+                }
             }
         except Exception as e:
             print(f"Anthropic API error: {e}")
@@ -211,38 +242,22 @@ async def generate_response(request_data: dict):
         db.close()
 
 @app.post("/analyze-sentiment")
-async def analyze_sentiment(data: dict):
-    text = data.get("text", "")
-    if not text:
-        return {"sentiment_score": 0, "error": "No text provided"}
-
-    sentiment = TextBlob(text).sentiment.polarity
-    return {"sentiment_score": sentiment}
+async def analyze_sentiment(request: SentimentRequest):
+    sentiment_score = analysis_service.analyze_sentiment(request.text)
+    return {"sentiment_score": sentiment_score}
 
 @app.post("/detect-bias")
-async def detect_bias(data: dict):
-    text = data.get("text", "")
-    if not text:
-        return {"bias_scores": {"political": 0.2}, "error": "No text provided"}
-
-    political = 0.6 if "government" in text.lower() else 0.4 if "freedom" in text.lower() else 0.2
-    gender = 0.7 if ("he" in text.lower()) ^ ("she" in text.lower()) else 0.1
-
-    return {"bias_scores": {"political": political, "gender": gender}}
+async def detect_bias(request: BiasRequest):
+    bias_scores = analysis_service.detect_bias(request.text)
+    return {"bias_scores": bias_scores}
 
 @app.post("/calculate-trust-score")
-async def calculate_trust_score(data: dict):
-    base = data.get("baseKnowledgePercentage", 50) / 100
-    docs = data.get("documentContributions", [])
-
-    if not docs:
-        trust = base
-    else:
-        factor = sum(d.get("contribution", 0) for d in docs) / len(docs) / 100
-        trust = (base * 0.7) + (factor * 0.3)
-
-    trust = min(max(trust, 0), 1)
-    return {"trust_score": trust}
+async def calculate_trust_score(request: TrustScoreRequest):
+    trust_score = analysis_service.calculate_trust_score(
+        request.baseKnowledgePercentage,
+        request.documentContributions
+    )
+    return {"trust_score": trust_score}
 
 @app.post("/api/chat/sessions")
 async def create_chat_session(data: dict, db: Session = Depends(get_db)):

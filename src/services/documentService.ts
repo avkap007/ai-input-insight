@@ -1,4 +1,3 @@
-
 import { Document } from "@/types";
 import { documentClient } from "@/utils/apiClients";
 import { v4 as uuidv4 } from 'uuid';
@@ -43,9 +42,9 @@ export const uploadFile = async (file: File): Promise<Document> => {
     return document;
   } catch (error) {
     console.error("Error uploading file:", error);
-    // Create a local document anyway to keep the UI working
+    // This fallback might be causing duplicates
     const document: Document = {
-      id: uuidv4(),
+      id: uuidv4(),  // New random ID being generated
       name: file.name,
       type: file.name.endsWith('.pdf') ? 'pdf' : 'text',
       content: "Error uploading document",
