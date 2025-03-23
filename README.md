@@ -35,42 +35,42 @@ This application allows you to:
 
 ### Installation
 
-1. Clone the repository
+1. Clone the repository  
    ```bash
    git clone https://github.com/yourusername/ai-input-insight.git
    cd ai-input-insight
    ```
 
-2. Install frontend dependencies
+2. Install frontend dependencies  
    ```bash
    npm install
    ```
 
-3. Create and activate a Python virtual environment
+3. Create and activate a Python virtual environment  
    ```bash
    python -m venv fastapi-env
    source fastapi-env/bin/activate  # On Windows: fastapi-env\Scripts\activate
    ```
 
-4. Install backend dependencies
+4. Install backend dependencies  
    ```bash
    pip install -r requirements.txt
    ```
 
-5. Create a `.env` file in the `api` directory with your Anthropic API key:
+5. Create a `.env` file in the `api` directory with your Anthropic API key:  
    ```
    ANTHROPIC_API_KEY=your_api_key_here
    ```
 
 ### Running the Application
 
-1. Start the backend server:
+1. Start the backend server:  
    ```bash
    cd api
    uvicorn main:app --reload
    ```
 
-2. In a new terminal, start the frontend development server:
+2. In a new terminal, start the frontend development server:  
    ```bash
    npm run dev
    ```
@@ -100,18 +100,18 @@ This application allows you to:
 
 To extend the application with additional NLP capabilities:
 
-1. Add the library to `requirements.txt`
+1. Add the library to `requirements.txt`  
    ```
    new_library_name==version_number
    ```
 
-2. Import and initialize the library in `api/main.py`
+2. Import and initialize the library in `api/main.py`  
    ```python
    import new_library_name
    # Initialize as needed
    ```
 
-3. Create or modify endpoints to use the new library
+3. Create or modify endpoints to use the new library  
    ```python
    @app.post("/new-analysis-endpoint")
    async def new_analysis(data: dict):
@@ -124,23 +124,23 @@ To extend the application with additional NLP capabilities:
 
 ### Example: Adding HateSonar
 
-1. Add to requirements.txt:
+1. Add to `requirements.txt`:
    ```
    hatesonar==0.0.5
    ```
 
-2. Implement in main.py:
+2. Implement in `main.py`:
    ```python
    from hatesonar import Sonar
-   
+
    sonar = Sonar()
-   
+
    @app.post("/detect-hate-speech")
    async def detect_hate_speech(data: dict):
        text = data.get("text", "")
        if not text:
            return {"hate_speech_result": {}, "error": "No text provided"}
-       
+
        result = sonar.ping(text)
        return {"hate_speech_result": result}
    ```
