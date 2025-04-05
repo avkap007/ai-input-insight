@@ -7,11 +7,11 @@ from sqlalchemy import text, inspect
 from dotenv import load_dotenv
 import os
 from textblob import TextBlob
-from .database import SessionLocal, engine, Base
-from .models import Document, ChatSession, Message
+from database import SessionLocal, engine, Base
+from models import Document, ChatSession, Message
 from datetime import datetime
 import sqlalchemy.exc
-from .services.analysis_service import AnalysisService
+from services.analysis_service import AnalysisService
 from pydantic import BaseModel
 from typing import List, Dict
 
