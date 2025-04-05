@@ -1,4 +1,3 @@
-
 # AI Input Insight
 
 A tool to explore how document inputs influence AI responses by visualizing document-level influence and attribution.
@@ -96,55 +95,36 @@ This application allows you to:
 - Bias detection
 - Trust score calculation
 
-## Adding New NLP Libraries
+## Project Structure
 
-To extend the application with additional NLP capabilities:
+```
+ai-input-insight/
+├── api/                  # Backend FastAPI application
+│   ├── main.py           # Main FastAPI application
+│   ├── models.py         # Database models
+│   └── ...
+├── src/                  # Frontend React application
+│   ├── components/       # React components
+│   ├── hooks/            # Custom React hooks
+│   ├── pages/            # Page components
+│   ├── services/         # API service functions
+│   ├── types/            # TypeScript type definitions
+│   └── utils/            # Utility functions
+├── public/               # Static assets
+├── package.json          # Frontend dependencies
+└── requirements.txt      # Backend dependencies
+```
 
-1. Add the library to `requirements.txt`  
-   ```
-   new_library_name==version_number
-   ```
+## Recent Fixes
 
-2. Import and initialize the library in `api/main.py`  
-   ```python
-   import new_library_name
-   # Initialize as needed
-   ```
-
-3. Create or modify endpoints to use the new library  
-   ```python
-   @app.post("/new-analysis-endpoint")
-   async def new_analysis(data: dict):
-       text = data.get("text", "")
-       result = new_library_name.analyze(text)
-       return {"analysis_result": result}
-   ```
-
-4. Update the frontend to call the new endpoint
-
-### Example: Adding HateSonar
-
-1. Add to `requirements.txt`:
-   ```
-   hatesonar==0.0.5
-   ```
-
-2. Implement in `main.py`:
-   ```python
-   from hatesonar import Sonar
-
-   sonar = Sonar()
-
-   @app.post("/detect-hate-speech")
-   async def detect_hate_speech(data: dict):
-       text = data.get("text", "")
-       if not text:
-           return {"hate_speech_result": {}, "error": "No text provided"}
-
-       result = sonar.ping(text)
-       return {"hate_speech_result": result}
-   ```
+- Fixed document upload UI update issue: Documents now appear immediately after upload without requiring a page refresh
+- Improved error handling for document uploads
+- Enhanced state management for document processing
 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- Developed as part of CMPT 415 directed studies under guidance of Dr. Nic Vincent and Dr. Margaret Grant at Simon Fraser University
