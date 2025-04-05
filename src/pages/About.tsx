@@ -34,10 +34,10 @@ const About: React.FC = () => {
                 <strong>Weighted Document Influence:</strong> Users can adjust the influence of each uploaded document using intuitive sliders.
               </li>
               <li>
-                <strong>Prompt Engineering:</strong> Document influence scores are directly incorporated into the prompt sent to the Anthropic Claude API.
+                <strong>Direct API Integration:</strong> Document influence scores are directly incorporated into the prompt sent to the Anthropic Claude API.
               </li>
               <li>
-                <strong>Response Analysis:</strong> Automatic sentiment, bias, and trust score calculations for generated responses.
+                <strong>Response Analysis:</strong> Automatic sentiment analysis using TextBlob and VADER, bias detection, and trust score calculations for generated responses.
               </li>
               <li>
                 <strong>Multi-Format Support:</strong> Upload and process PDFs and text documents.
@@ -49,13 +49,26 @@ const About: React.FC = () => {
               When generating a response, our system sends a comprehensive prompt to Claude that includes:
               <ul className="list-disc pl-6 mt-2">
                 <li>User's query</li>
-                <li>Document contexts weighted by their influence scores</li>
-                <li>Implicit instructions about document contributions</li>
+                <li>Document influence values as set by the user with the sliders</li>
+                <li>Document contents weighted according to their influence values</li>
               </ul>
             </p>
             <p className="mt-4">
-              This approach allows for nuanced exploration of how different document contexts and their weighted influences can shape an AI's response.
+              This approach allows for direct exploration of how document influence values affect an AI's response, with visualization tools to help understand which parts of the response were derived from which sources.
             </p>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-2xl font-bold mb-4">Technical Architecture</h2>
+            <p className="mb-4">
+              AI Input Insight is built with a modern tech stack:
+            </p>
+            <ul className="list-disc pl-6 space-y-2">
+              <li><strong>Frontend:</strong> React, TypeScript, Tailwind CSS, shadcn/ui components</li>
+              <li><strong>Backend:</strong> FastAPI (Python), SQLite database with SQLAlchemy</li>
+              <li><strong>AI Integration:</strong> Anthropic Claude API for response generation</li>
+              <li><strong>Analysis Tools:</strong> TextBlob, VADER, and custom NLP algorithms</li>
+            </ul>
           </section>
 
           <section className="mb-8">
@@ -69,8 +82,8 @@ const About: React.FC = () => {
           <section className="bg-blue-50 border-l-4 border-blue-500 p-4 mt-6">
             <p className="font-medium">Research Note:</p>
             <p>
-              The current implementation is a proof-of-concept demonstrating how document influence can be quantified and integrated into AI response generation. 
-              Future work may involve more sophisticated attribution and context modeling techniques.
+              The current implementation demonstrates how document influence can be directly integrated into AI response generation through prompt engineering. 
+              Future work may explore more sophisticated attribution and context modeling techniques.
             </p>
           </section>
         </div>

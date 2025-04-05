@@ -27,7 +27,7 @@ const HowItWorks: React.FC = () => {
               <h3 className="text-xl font-semibold mt-6 mb-3">Document Influence Mechanism</h3>
               <p>
                 In our current implementation, users can upload documents (PDFs or text files) and adjust their influence using a slider for each document. 
-                The influence slider determines how much each document contributes to the context when generating an AI response.
+                The influence slider value directly affects how much each document contributes to the AI's response.
               </p>
               
               <h3 className="text-xl font-semibold mt-6 mb-3">AI Response Generation Process</h3>
@@ -47,24 +47,38 @@ const HowItWorks: React.FC = () => {
                   </ul>
                 </li>
                 <li>
-                  <strong>API Interaction:</strong> The compiled context, along with the user's query, is sent to the Anthropic Claude API as a single, comprehensive prompt.
+                  <strong>API Interaction:</strong> The user's query along with the influence slider values for each document are sent to the Anthropic Claude API.
                 </li>
                 <li>
-                  <strong>Response Generation:</strong> Claude generates a response considering the weighted document contexts and the original query.
+                  <strong>Response Generation:</strong> Claude generates a response based on the user's query and the weighted influence of each document.
+                </li>
+                <li>
+                  <strong>Response Attribution:</strong> The system processes the response to determine which parts came from which documents.
                 </li>
                 <li>
                   <strong>Post-Generation Analysis:</strong> After generating the response, our system performs:
                   <ul className="list-disc pl-6">
-                    <li>Sentiment Analysis</li>
-                    <li>Bias Detection</li>
-                    <li>Trust Score Calculation</li>
+                    <li>Sentiment Analysis using TextBlob and VADER</li>
+                    <li>Bias Detection using specialized NLP algorithms</li>
+                    <li>Trust Score Calculation based on source diversity and attribution confidence</li>
                   </ul>
                 </li>
               </ol>
               
               <h3 className="text-xl font-semibold mt-6 mb-3">Technical Details</h3>
               <p>
-                The influence slider's value is directly sent to the Anthropic API as part of the prompt engineering process. This allows fine-grained control over how much each document contributes to the context and ultimately shapes the AI's response.
+                The influence slider's value is directly sent to the Anthropic API as part of the prompt. The API then processes the document content weighted by these influence values, generating a response that reflects the varying importance of each document.
+              </p>
+              
+              <p className="mt-4">
+                The system then analyzes the response text to determine which portions were likely influenced by which documents, creating a visual attribution map that helps users understand how different documents shaped the AI's response.
+              </p>
+            </div>
+            
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mt-6">
+              <p className="font-medium">Current Research Implementation:</p>
+              <p>
+                This implementation demonstrates a direct approach to document influence through prompt engineering. The influence sliders and user's query are sent directly to the Anthropic API, which then generates responses that reflect the relative importance of each document.
               </p>
             </div>
           </section>

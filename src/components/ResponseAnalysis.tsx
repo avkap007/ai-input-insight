@@ -42,11 +42,11 @@ const ResponseAnalysis: React.FC<ResponseAnalysisProps> = ({ analysisData }) => 
   
   return (
     <div className="space-y-4 mt-4 w-full">
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader className="pb-2">
           <div className="flex justify-between items-center">
             <CardTitle className="text-sm font-medium flex items-center">
-              Analysis Results
+              Response Analysis
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -136,9 +136,6 @@ const ResponseAnalysis: React.FC<ResponseAnalysisProps> = ({ analysisData }) => 
                           <p className="text-xs">
                             Higher percentages indicate stronger presence of language associated with particular viewpoints or demographic considerations.
                           </p>
-                          <p className="text-xs text-amber-600">
-                            Note: This is a simplified indicator and not a comprehensive bias analysis.
-                          </p>
                         </div>
                       </TooltipContent>
                     </Tooltip>
@@ -149,10 +146,10 @@ const ResponseAnalysis: React.FC<ResponseAnalysisProps> = ({ analysisData }) => 
                     <BarChart
                       data={biasData}
                       layout="vertical"
-                      margin={{ top: 5, right: 10, left: 50, bottom: 5 }}
+                      margin={{ top: 5, right: 25, left: 50, bottom: 5 }}
                     >
                       <XAxis type="number" domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
-                      <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} />
+                      <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={80} />
                       <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                         {biasData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.value > 50 ? '#ef4444' : '#3b82f6'} />
@@ -185,9 +182,6 @@ const ResponseAnalysis: React.FC<ResponseAnalysisProps> = ({ analysisData }) => 
                             <li><strong>Attribution confidence</strong>: How confident the system is about the source attributions</li>
                             <li><strong>Base/document balance</strong>: Whether the response has a healthy mix of AI knowledge and document-sourced information</li>
                           </ul>
-                          <p className="text-xs">
-                            Higher scores suggest more reliable content with clearer attributions.
-                          </p>
                         </div>
                       </TooltipContent>
                     </Tooltip>
@@ -202,17 +196,18 @@ const ResponseAnalysis: React.FC<ResponseAnalysisProps> = ({ analysisData }) => 
                 </p>
               </div>
               
-              {/* Technical explanation - Updated to be more accurate */}
+              {/* Technical explanation - Updated to reflect README */}
               <div className="mt-6 pt-4 border-t border-gray-100">
-                <h4 className="text-xs font-medium text-gray-700 mb-2">Technical Details</h4>
+                <h4 className="text-xs font-medium text-gray-700 mb-2">Technical Implementation</h4>
                 <p className="text-xs text-gray-500 mb-2">
-                  This analysis combines several approaches to evaluate AI content:
+                  Our analysis pipeline combines multiple NLP techniques:
                 </p>
                 <ul className="text-xs text-gray-500 list-disc pl-4 space-y-1">
-                  <li><strong>Token Attribution:</strong> Uses attention weights to match response text to source documents</li>
-                  <li><strong>Sentiment Analysis:</strong> Applies a combination of rule-based and ML techniques to detect emotional tone</li>
-                  <li><strong>Bias Detection:</strong> Examines language patterns for skewed representations across demographic and viewpoint dimensions</li>
-                  <li><strong>Trust Scoring:</strong> Calculates confidence based on attribution overlap and source diversity</li>
+                  <li><strong>Influence Processing:</strong> Document influence values + user query are sent to the Anthropic API</li>
+                  <li><strong>Response Generation:</strong> Claude generates responses with text segments attributed to each source</li>
+                  <li><strong>Sentiment Analysis:</strong> Using TextBlob and VADER for emotional tone detection</li>
+                  <li><strong>Bias Detection:</strong> Examining language patterns across demographic and viewpoint dimensions</li>
+                  <li><strong>Trust Scoring:</strong> Algorithm weighing source diversity and attribution confidence</li>
                 </ul>
               </div>
             </>
