@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import DocumentUpload from '@/components/DocumentUpload';
@@ -35,8 +34,23 @@ const Index = () => {
   } = useMessages(chatSessionId);
 
   // Create a wrapper function to handle document uploads for DocumentUpload component
-  const handleDocUpload = (document: Document) => {
-    return document;
+  const handleDocUpload = async (document: Document) => {
+    try {
+      // If it's a File object, use handleDocumentUpload
+      if (document instanceof File) {
+        return await handleDocumentUpload(document);
+      }
+      // If it's already a Document object (e.g., from direct text input), add it to the state
+      return document;
+    } catch (error) {
+      console.error("Error handling document upload:", error);
+      toast({
+        title: "Upload failed",
+        description: "There was an error processing your document.",
+        variant: "destructive",
+      });
+      throw error;
+    }
   };
 
   // Create a wrapper function to handle sending messages with documents

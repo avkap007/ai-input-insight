@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { documentClient } from "@/utils/apiClients"; // Ensure this exists
@@ -53,15 +52,16 @@ const UploadArea: React.FC<UploadAreaProps> = ({ onDocumentUpload }) => {
       setUploadingProgress(0);
       simulateUploadProgress(() => setUploadingProgress(null));
 
-      // Upload document to FastAPI
+      // Upload document to FastAPI and update state
       const uploadedDocument = await documentClient.uploadDocument(file);
-      onDocumentUpload(uploadedDocument);
+      await onDocumentUpload(uploadedDocument);
 
       toast({
         title: "Document uploaded",
         description: `${file.name} has been uploaded.`,
       });
     } catch (error) {
+      console.error("Error uploading document:", error);
       toast({
         title: "Upload failed",
         description: "There was an error uploading your document.",
