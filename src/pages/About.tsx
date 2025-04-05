@@ -20,52 +20,57 @@ const About: React.FC = () => {
         <h1 className="text-3xl font-bold mb-8">About AI Input Insight</h1>
 
         <div className="prose max-w-none">
-          <p className="text-gray-600 mb-8">
-            This project was developed as part of a CMPT 415 directed studies course under the guidance of Dr. Nic Vincent and Dr. Margaret Grant at Simon Fraser University.
-          </p>
-
           <section className="mb-8">
-            <h2 className="text-2xl font-bold mb-4">Project Goals</h2>
-            <p>
-              AI Input Insight is a tool designed to help users explore how document inputs influence the behavior of large language models (LLMs). Our key objectives include:
+            <h2 className="text-2xl font-bold mb-4">Current Implementation</h2>
+            
+            <p className="text-gray-600 mb-4">
+              AI Input Insight is a research-driven tool designed to explore how document inputs influence large language model responses. 
+              Our current implementation leverages the Anthropic Claude API to demonstrate document-level attribution and context manipulation.
             </p>
-            <ul className="list-disc pl-6 space-y-2 mt-4">
-              <li>Visualizing how uploaded content changes AI responses</li>
-              <li>Understanding document-level influence with adjustable sliders</li>
-              <li>Highlighting document attribution in generated responses</li>
-              <li>Performing post-generation analysis (sentiment, bias, trust)</li>
-            </ul>
-          </section>
 
-          <section className="mb-8">
-            <h2 className="text-2xl font-bold mb-4">How It Works</h2>
+            <h3 className="text-xl font-semibold mt-6 mb-3">Key Features</h3>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>
+                <strong>Weighted Document Influence:</strong> Users can adjust the influence of each uploaded document using intuitive sliders.
+              </li>
+              <li>
+                <strong>Prompt Engineering:</strong> Document influence scores are directly incorporated into the prompt sent to the Anthropic Claude API.
+              </li>
+              <li>
+                <strong>Response Analysis:</strong> Automatic sentiment, bias, and trust score calculations for generated responses.
+              </li>
+              <li>
+                <strong>Multi-Format Support:</strong> Upload and process PDFs and text documents.
+              </li>
+            </ul>
+
+            <h3 className="text-xl font-semibold mt-6 mb-3">Technical Approach</h3>
             <p>
-              Our system allows you to upload text or PDFs and adjust how much each document matters when generating responses. The backend processes your documents and uses the Anthropic Claude API to generate responses based on your query and the uploaded documents.
+              When generating a response, our system sends a comprehensive prompt to Claude that includes:
+              <ul className="list-disc pl-6 mt-2">
+                <li>User's query</li>
+                <li>Document contexts weighted by their influence scores</li>
+                <li>Implicit instructions about document contributions</li>
+              </ul>
             </p>
             <p className="mt-4">
-              After generating a response, we analyze it using several NLP techniques:
+              This approach allows for nuanced exploration of how different document contexts and their weighted influences can shape an AI's response.
             </p>
-            <ul className="list-disc pl-6 space-y-2 mt-4">
-              <li><strong>Sentiment analysis:</strong> Using TextBlob to assess the emotional tone</li>
-              <li><strong>Bias detection:</strong> Identifying potential biases in the generated text</li>
-              <li><strong>Trust scoring:</strong> Calculating how much the response can be trusted based on document influence</li>
-            </ul>
           </section>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-bold mb-4">Tech Stack</h2>
-            <ul className="list-disc pl-6 space-y-2">
-              <li><strong>Frontend:</strong> React + TypeScript, Tailwind CSS, shadcn/ui</li>
-              <li><strong>Backend:</strong> FastAPI (Python), SQLite database</li>
-              <li><strong>NLP:</strong> TextBlob, VADER, HateSonar</li>
-              <li><strong>AI:</strong> Anthropic Claude API</li>
-            </ul>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-2xl font-bold mb-4">Acknowledgments</h2>
+            <h2 className="text-2xl font-bold mb-4">Research and Educational Value</h2>
             <p>
-              Special thanks to the School of Computing Science at SFU, and to the growing community of researchers and engineers advancing the field of AI transparency.
+              Developed as part of a directed studies course at Simon Fraser University under the guidance of Dr. Nic Vincent and Dr. Margaret Grant, 
+              this tool serves both as a research prototype and an educational platform for understanding AI context manipulation.
+            </p>
+          </section>
+
+          <section className="bg-blue-50 border-l-4 border-blue-500 p-4 mt-6">
+            <p className="font-medium">Research Note:</p>
+            <p>
+              The current implementation is a proof-of-concept demonstrating how document influence can be quantified and integrated into AI response generation. 
+              Future work may involve more sophisticated attribution and context modeling techniques.
             </p>
           </section>
         </div>
