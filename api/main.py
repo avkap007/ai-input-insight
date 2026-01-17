@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from mangum import Mangum
 import pdfplumber
 import anthropic
 from dotenv import load_dotenv
@@ -351,3 +352,7 @@ def calculate_attribution(documents: List[DocumentInput]) -> Dict:
         "baseKnowledge": base_knowledge,
         "documents": doc_contributions
     }
+
+
+# Vercel serverless handler
+handler = Mangum(app)
