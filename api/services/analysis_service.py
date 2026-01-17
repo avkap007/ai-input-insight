@@ -1,7 +1,6 @@
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from textblob import TextBlob
 from typing import Dict, List
-import numpy as np
 
 class AnalysisService:
     def __init__(self):
