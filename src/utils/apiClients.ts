@@ -1,83 +1,37 @@
-import { AttributionData, Document } from "@/types";
+import { Document } from "@/types";
 
 // Base URL for API endpoints - use relative URLs in production, localhost in development
 const API_BASE_URL = import.meta.env.DEV ? "http://127.0.0.1:8000" : "/api";
 
 /**
- * Client for interacting with document-related API endpoints
+ * Client for document text extraction (stateless - no storage)
  */
 export const documentClient = {
-  // Get all documents
-  getDocuments: async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/documents`);
-      if (!response.ok) throw new Error('Failed to fetch documents');
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching documents:', error);
-      throw error;
-    }
-  },
-
-  // Upload a document
-  uploadDocument: async (file: File) => {
+  // Extract text from uploaded file
+  extractText: async (file: File) => {
     try {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch(`${API_BASE_URL}/upload-document`, {
+      const response = await fetch(`${API_BASE_URL}/extract-text`, {
         method: 'POST',
         body: formData,
       });
 
-      if (!response.ok) throw new Error('Failed to upload document');
+      if (!response.ok) throw new Error('Failed to extract text from document');
       return await response.json();
     } catch (error) {
-      console.error('Error uploading document:', error);
-      throw error;
-    }
-  },
-
-  // Delete a document
-  deleteDocument: async (id: string) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/delete-document/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) throw new Error('Failed to delete document');
-      return await response.json();
-    } catch (error) {
-      console.error('Error deleting document:', error);
-      throw error;
-    }
-  },
-
-  // Update document influence
-  updateDocumentInfluence: async (id: string, influenceScore: number) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/update-influence/${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ influence: influenceScore }),
-      });
-
-      if (!response.ok) throw new Error('Failed to update document influence');
-      return await response.json();
-    } catch (error) {
-      console.error('Error updating document influence:', error);
+      console.error('Error extracting text:', error);
       throw error;
     }
   },
 };
 
 /**
- * Client for interacting with response generation API endpoints
+ * Client for AI response generation
  */
 export const responseClient = {
-  // Generate a response based on documents
+  // Generate a response based on documents and query
   generateResponse: async (prompt: string, documents: Document[]) => {
     try {
       const response = await fetch(`${API_BASE_URL}/generate-response`, {
@@ -89,9 +43,9 @@ export const responseClient = {
           query: prompt,
           documents: documents.map(doc => ({
             id: doc.id,
-            content: doc.content,
             name: doc.name,
-            influence: doc.influenceScore,
+            content: doc.content,
+            influence: doc.influenceScore || 0.5,
             poisoning_level: doc.poisoningLevel || 0,
             excluded: doc.excluded || false
           })),
@@ -111,7 +65,7 @@ export const responseClient = {
 };
 
 /**
- * Client for interacting with analysis-related API endpoints
+ * Client for text analysis endpoints
  */
 export const analysisClient = {
   // Analyze sentiment of text
@@ -133,7 +87,7 @@ export const analysisClient = {
       return data.sentiment_score || 0;
     } catch (error) {
       console.error("Error analyzing sentiment:", error);
-      return 0; // Neutral sentiment as fallback
+      return 0;
     }
   },
 
@@ -155,11 +109,11 @@ export const analysisClient = {
       return await response.json();
     } catch (error) {
       console.error("Error detecting bias:", error);
-      return { bias_scores: { political: 0.2, gender: 0.1 } }; // Fallback values
+      return { bias_scores: { political: 0.2, gender: 0.1 } };
     }
   },
 
-  // Calculate trust score based on attribution data
+  // Calculate trust score
   calculateTrustScore: async (
     baseKnowledgePercentage: number,
     documentContributions: { id: string; name: string; contribution: number }[]
@@ -171,8 +125,8 @@ export const analysisClient = {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          baseKnowledgePercentage: baseKnowledgePercentage,
-          documentContributions: documentContributions,
+          baseKnowledgePercentage,
+          documentContributions,
         }),
       });
 
@@ -184,7 +138,7 @@ export const analysisClient = {
       return data.trust_score || 0.5;
     } catch (error) {
       console.error("Error calculating trust score:", error);
-      return 0.5; // Medium trust as fallback
+      return 0.5;
     }
   },
 };

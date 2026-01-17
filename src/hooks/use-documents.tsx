@@ -5,57 +5,62 @@ import { toast } from "@/components/ui/use-toast";
 import { documentClient } from "@/utils/apiClients";
 import { v4 as uuidv4 } from "uuid";
 
+const STORAGE_KEY = "ai-input-insight-documents";
+
+// Load documents from localStorage
+const loadFromStorage = (): Document[] => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (error) {
+    console.error("Error loading from localStorage:", error);
+  }
+  return [];
+};
+
+// Save documents to localStorage
+const saveToStorage = (documents: Document[]) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(documents));
+  } catch (error) {
+    console.error("Error saving to localStorage:", error);
+  }
+};
+
 export const useDocuments = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch documents from API on load
-  const fetchDocuments = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const response = await documentClient.getDocuments();
-      console.log("Fetched documents from API:", response);
-      
-      // Map the API response to our Document type
-      const mappedDocuments = response.map((doc: any) => ({
-        id: doc.id,
-        name: doc.name,
-        type: doc.name.endsWith('.pdf') ? 'pdf' : 'text',
-        content: doc.content,
-        size: doc.size || undefined,
-        influenceScore: doc.influence_score !== undefined ? doc.influence_score : 0.5,
-        poisoningLevel: 0,
-        excluded: false
-      }));
-      
-      console.log("Mapped documents:", mappedDocuments);
-
-      setDocuments(mappedDocuments);
-    } catch (error) {
-      console.error("Error fetching documents:", error);
-      toast({ title: "Error", description: "Failed to load documents.", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-  
+  // Load documents from localStorage on mount
   useEffect(() => {
-    fetchDocuments();
-  }, [fetchDocuments]);
+    const stored = loadFromStorage();
+    setDocuments(stored);
+    setIsLoading(false);
+  }, []);
 
-  // Handle document upload
+  // Save to localStorage whenever documents change
+  useEffect(() => {
+    if (!isLoading) {
+      saveToStorage(documents);
+    }
+  }, [documents, isLoading]);
+
+  // Handle file upload - extract text via API, store locally
   const handleDocumentUpload = async (file: File) => {
     try {
-      const uploadedDoc = await documentClient.uploadDocument(file);
+      // Call API to extract text from file
+      const result = await documentClient.extractText(file);
       
-      // Map the API response to our Document type
+      // Create document object
       const newDocument: Document = {
-        id: uploadedDoc.id || uuidv4(),
-        name: uploadedDoc.filename,
-        type: uploadedDoc.filename.endsWith('.pdf') ? 'pdf' : 'text',
-        content: uploadedDoc.content,
+        id: result.id || uuidv4(),
+        name: result.filename || file.name,
+        type: file.name.endsWith('.pdf') ? 'pdf' : 'text',
+        content: result.content,
         size: file.size,
-        influenceScore: uploadedDoc.influence_score !== undefined ? uploadedDoc.influence_score : 0.5,
+        influenceScore: result.influence_score || 0.5,
         poisoningLevel: 0,
         excluded: false
       };
@@ -66,81 +71,95 @@ export const useDocuments = () => {
       return newDocument;
     } catch (error) {
       console.error("Error uploading document:", error);
-      toast({ title: "Upload failed", description: "Error saving document.", variant: "destructive" });
+      
+      // Fallback: try to read text file locally
+      if (!file.name.endsWith('.pdf')) {
+        try {
+          const content = await file.text();
+          const newDocument: Document = {
+            id: uuidv4(),
+            name: file.name,
+            type: 'text',
+            content,
+            size: file.size,
+            influenceScore: 0.5,
+            poisoningLevel: 0,
+            excluded: false
+          };
+          setDocuments((prev) => [...prev, newDocument]);
+          toast({ title: "Document uploaded", description: "Your document has been added (local processing)." });
+          return newDocument;
+        } catch (e) {
+          console.error("Local fallback failed:", e);
+        }
+      }
+      
+      toast({ title: "Upload failed", description: "Error processing document.", variant: "destructive" });
       throw error;
     }
   };
   
-  // Handle document direct text addition
+  // Handle direct text addition
   const handleAddTextDocument = async (textContent: string, name?: string) => {
-    try {
-      // For text snippets, we create a file object and upload it
-      const blob = new Blob([textContent], { type: 'text/plain' });
-      const file = new File([blob], name || `Quote_${new Date().toISOString()}.txt`, { type: 'text/plain' });
-      
-      return await handleDocumentUpload(file);
-    } catch (error) {
-      console.error("Error adding text document:", error);
-      toast({ title: "Addition failed", description: "Error saving text.", variant: "destructive" });
-      throw error;
-    }
+    const newDocument: Document = {
+      id: uuidv4(),
+      name: name || `Text_${new Date().toISOString().slice(0, 10)}.txt`,
+      type: 'text',
+      content: textContent,
+      influenceScore: 0.5,
+      poisoningLevel: 0,
+      excluded: false
+    };
+    
+    setDocuments((prev) => [...prev, newDocument]);
+    toast({ title: "Text added", description: "Your text has been added as a document." });
+    
+    return newDocument;
   };
 
-  // Handle document deletion
+  // Remove document (local only)
   const handleRemoveDocument = async (id: string) => {
-    try {
-      await documentClient.deleteDocument(id);
-      setDocuments((prev) => prev.filter((doc) => doc.id !== id));
-      toast({ title: "Document removed", description: "The document has been deleted." });
-    } catch (error) {
-      console.error("Error removing document:", error);
-      toast({ title: "Removal failed", description: "Error deleting document.", variant: "destructive" });
-    }
+    setDocuments((prev) => prev.filter((doc) => doc.id !== id));
+    toast({ title: "Document removed", description: "The document has been deleted." });
   };
 
-  // Handle influence update
+  // Update influence (local only)
   const handleUpdateDocumentInfluence = async (id: string, influenceScore: number) => {
-    try {
-      console.log(`Updating document ${id} influence to ${influenceScore}`);
-      await documentClient.updateDocumentInfluence(id, influenceScore);
-      
-      setDocuments((prev) =>
-        prev.map((doc) => (doc.id === id ? { ...doc, influenceScore } : doc))
-      );
-      
-      toast({ 
-        title: "Influence updated", 
-        description: `Influence set to ${Math.round(influenceScore * 100)}%` 
-      });
-    } catch (error) {
-      console.error("Error updating document influence:", error);
-      toast({ title: "Update failed", description: "Error updating influence.", variant: "destructive" });
-    }
+    setDocuments((prev) =>
+      prev.map((doc) => (doc.id === id ? { ...doc, influenceScore } : doc))
+    );
   };
   
-  // Update poisoning level (client-side only)
+  // Update poisoning level (local only)
   const handleUpdateDocumentPoisoning = (id: string, poisoningLevel: number) => {
     setDocuments((prev) =>
       prev.map((doc) => (doc.id === id ? { ...doc, poisoningLevel } : doc))
     );
   };
   
-  // Update exclusion status (client-side only)
+  // Update exclusion status (local only)
   const handleUpdateDocumentExclusion = (id: string, excluded: boolean) => {
     setDocuments((prev) =>
       prev.map((doc) => (doc.id === id ? { ...doc, excluded } : doc))
     );
   };
 
+  // Clear all documents
+  const handleClearDocuments = () => {
+    setDocuments([]);
+    localStorage.removeItem(STORAGE_KEY);
+    toast({ title: "Documents cleared", description: "All documents have been removed." });
+  };
+
   return {
     documents,
     isLoading,
-    fetchDocuments,
     handleDocumentUpload,
     handleAddTextDocument,
     handleRemoveDocument,
     handleUpdateDocumentInfluence,
     handleUpdateDocumentPoisoning,
-    handleUpdateDocumentExclusion
+    handleUpdateDocumentExclusion,
+    handleClearDocuments
   };
 };

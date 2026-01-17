@@ -1,55 +1,35 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Message, Document, TokenAttribution, AttributionData, AnalysisData } from '@/types';
-import { saveMessage, getMessages } from '@/services/chatService';
-import { responseClient, analysisClient } from '@/utils/apiClients';
+import { responseClient } from '@/utils/apiClients';
 import { toast } from '@/components/ui/use-toast';
+import { v4 as uuidv4 } from 'uuid';
 
-export const useMessages = (chatSessionId: string | null) => {
+export const useMessages = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Load initial messages when component mounts with a valid chat session ID
-  const loadMessages = useCallback(async () => {
-    if (!chatSessionId) return;
-    
-    try {
-      const loadedMessages = await getMessages(chatSessionId);
-      setMessages(loadedMessages);
-    } catch (error) {
-      console.error('Error loading messages:', error);
-    }
-  }, [chatSessionId]);
-
-  // Load messages when chatSessionId changes
-  useEffect(() => {
-    if (chatSessionId) {
-      loadMessages();
-    }
-  }, [chatSessionId, loadMessages]);
-
-  // Send a new message and get AI response
+  // Send a message and get AI response
   const handleSendMessage = useCallback(async (content: string, documents: Document[]) => {
-    if (!chatSessionId || !content.trim()) return;
+    if (!content.trim()) return;
     
     try {
       setIsProcessing(true);
       
-      // Save user message
-      const userMessage: Omit<Message, 'id'> = {
+      // Add user message to state
+      const userMessage: Message = {
+        id: uuidv4(),
         role: 'user',
         content,
         timestamp: new Date(),
       };
       
-      const savedUserMessage = await saveMessage(chatSessionId, userMessage);
-      setMessages(prevMessages => [...prevMessages, savedUserMessage]);
+      setMessages(prevMessages => [...prevMessages, userMessage]);
       
-      // Filter out any excluded documents
+      // Filter out excluded documents
       const includedDocuments = documents.filter(doc => !doc.excluded);
       
       // Generate AI response
-      console.log(`Sending request with ${includedDocuments.length} documents:`, includedDocuments);
       const response = await responseClient.generateResponse(content, includedDocuments);
       
       if (!response) {
@@ -60,63 +40,22 @@ export const useMessages = (chatSessionId: string | null) => {
       const generatedText = response.generated_text || "I couldn't generate a response at this time.";
       const attributions: TokenAttribution[] = response.attributions || [];
       
-      // Create attribution data for pie chart
-      // Calculate document contributions based on attribution data
-      let baseKnowledgePercentage = 40; // Default value
-      let documentContributions = documents.map(doc => ({
-        id: doc.id,
-        name: doc.name,
-        contribution: 0
-      }));
-      
-      // If we have real attribution data, process it
-      if (response.attributionData) {
-        baseKnowledgePercentage = response.attributionData.baseKnowledge || 40;
-        documentContributions = response.attributionData.documents || documentContributions;
-      }
-      
-      const attributionData: AttributionData = {
-        baseKnowledge: baseKnowledgePercentage,
-        documents: documentContributions
+      // Get attribution data
+      const attributionData: AttributionData = response.attributionData || {
+        baseKnowledge: 100,
+        documents: []
       };
       
-      // Analyze response for sentiment, bias, and trust
-      let analysisData: AnalysisData | null = null;
+      // Get analysis data
+      const analysisData: AnalysisData = response.analysisData || {
+        sentiment: 0,
+        bias: { political: 0.2, gender: 0.1 },
+        trustScore: 0.5
+      };
       
-      try {
-        // Get sentiment analysis
-        const sentiment = await analysisClient.analyzeSentiment(generatedText);
-        
-        // Get bias analysis
-        const biasData = await analysisClient.detectBias(generatedText);
-        const bias = biasData.bias_scores || { political: 0.2, gender: 0.1 };
-        
-        // Calculate trust score based on attribution
-        const trustScore = await analysisClient.calculateTrustScore(
-          baseKnowledgePercentage,
-          documentContributions
-        );
-        
-        // Combine all analysis data
-        analysisData = {
-          sentiment,
-          bias,
-          trustScore
-        };
-        
-        console.log("Analysis data:", analysisData);
-      } catch (error) {
-        console.error('Error analyzing response:', error);
-        // Fallback data in case analysis fails
-        analysisData = {
-          sentiment: 0, // Neutral sentiment
-          bias: { political: 0.2, gender: 0.1 },
-          trustScore: 0.5 // Medium trust
-        };
-      }
-      
-      // Save AI message
-      const aiMessage: Omit<Message, 'id'> = {
+      // Add AI message to state
+      const aiMessage: Message = {
+        id: uuidv4(),
         role: 'assistant',
         content: generatedText,
         timestamp: new Date(),
@@ -125,24 +64,39 @@ export const useMessages = (chatSessionId: string | null) => {
         analysisData
       };
       
-      const savedAiMessage = await saveMessage(chatSessionId, aiMessage);
-      setMessages(prevMessages => [...prevMessages, savedAiMessage]);
+      setMessages(prevMessages => [...prevMessages, aiMessage]);
+      
     } catch (error) {
       console.error('Error in message flow:', error);
       toast({
         title: 'Error',
-        description: 'Failed to process your request. Please try again.',
+        description: 'Failed to generate response. Please check your connection and try again.',
         variant: 'destructive',
       });
+      
+      // Add error message
+      const errorMessage: Message = {
+        id: uuidv4(),
+        role: 'assistant',
+        content: 'Sorry, I encountered an error generating a response. Please try again.',
+        timestamp: new Date(),
+      };
+      setMessages(prevMessages => [...prevMessages, errorMessage]);
+      
     } finally {
       setIsProcessing(false);
     }
-  }, [chatSessionId]);
+  }, []);
+
+  // Clear all messages
+  const handleClearMessages = useCallback(() => {
+    setMessages([]);
+  }, []);
 
   return {
     messages,
     isProcessing,
     handleSendMessage,
-    loadMessages
+    handleClearMessages
   };
 };

@@ -1,19 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Header from '@/components/Header';
 import DocumentUpload from '@/components/DocumentUpload';
 import ChatInterface from '@/components/ChatInterface';
 import MainLayout from '@/components/layout/MainLayout';
 import { toast } from '@/components/ui/use-toast';
-import { createChatSession } from '@/services/chatService';
 import { useDocuments } from '@/hooks/use-documents';
 import { useMessages } from '@/hooks/use-messages';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { Document } from '@/types';
 
 const Index = () => {
-  const [chatSessionId, setChatSessionId] = useState<string | null>(null);
-  const isMobile = useIsMobile();
-  
   // Initialize documents state with the useDocuments hook
   const {
     documents,
@@ -31,7 +26,7 @@ const Index = () => {
     messages,
     isProcessing,
     handleSendMessage
-  } = useMessages(chatSessionId);
+  } = useMessages();
 
   // Create a wrapper function to handle document uploads for DocumentUpload component
   const handleDocUpload = async (document: Document) => {
@@ -57,24 +52,6 @@ const Index = () => {
   const handleSendMessageWithDocs = (content: string) => {
     return handleSendMessage(content, documents);
   };
-
-  useEffect(() => {
-    const initializeChat = async () => {
-      try {
-        const sessionId = await createChatSession();
-        setChatSessionId(sessionId);
-      } catch (error) {
-        console.error("Error initializing chat:", error);
-        toast({
-          title: "Error",
-          description: "Failed to initialize the application. Please refresh the page.",
-          variant: "destructive",
-        });
-      }
-    };
-    
-    initializeChat();
-  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
