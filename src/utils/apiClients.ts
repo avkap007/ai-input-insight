@@ -1,7 +1,7 @@
 import { AttributionData, Document } from "@/types";
 
-// Base URL for API endpoints
-const API_BASE_URL = "http://127.0.0.1:8000";
+// Base URL for API endpoints - use relative URLs in production, localhost in development
+const API_BASE_URL = import.meta.env.DEV ? "http://127.0.0.1:8000" : "/api";
 
 /**
  * Client for interacting with document-related API endpoints

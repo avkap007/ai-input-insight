@@ -1,7 +1,8 @@
 import { Document } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+// Base URL for API endpoints - use relative URLs in production, localhost in development
+const API_BASE_URL = import.meta.env.DEV ? "http://127.0.0.1:8000" : "/api";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 

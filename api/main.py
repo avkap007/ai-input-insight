@@ -47,16 +47,19 @@ client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 Base.metadata.create_all(bind=engine)
 
 # Ensure 'influence_score' column exists in 'documents' table
-insp = inspect(engine)
-columns = [col["name"] for col in insp.get_columns("documents")]
+try:
+    insp = inspect(engine)
+    columns = [col["name"] for col in insp.get_columns("documents")]
 
-if "influence_score" not in columns:
-    try:
-        with engine.connect() as conn:
-            conn.execute(text("ALTER TABLE documents ADD COLUMN influence_score FLOAT DEFAULT 0.5"))
-            print("✅ Added 'influence_score' column to documents table.")
-    except Exception as e:
-        print(f"⚠️ Could not add column: {e}")
+    if "influence_score" not in columns:
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE documents ADD COLUMN influence_score FLOAT DEFAULT 0.5"))
+                print("✅ Added 'influence_score' column to documents table.")
+        except Exception as e:
+            print(f"⚠️ Could not add column: {e}")
+except Exception as e:
+    print(f"⚠️ Could not inspect database: {e}")
 
 # Dependency
 def get_db():
@@ -70,10 +73,12 @@ def get_db():
 analysis_service = AnalysisService()
 
 @app.get("/")
+@app.get("/api")
 def home():
     return {"message": "FastAPI backend running!"}
 
 @app.post("/upload")
+@app.post("/api/upload")
 async def upload_document(file: UploadFile = File(...), db: Session = Depends(get_db)):
     content = ""
     if file.filename.endswith(".pdf"):
@@ -103,10 +108,12 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
     }
 
 @app.post("/upload-document")
+@app.post("/api/upload-document")
 async def upload_document_alt(file: UploadFile = File(...), db: Session = Depends(get_db)):
     return await upload_document(file, db)
 
 @app.get("/documents")
+@app.get("/api/documents")
 def get_documents(db: Session = Depends(get_db)):
     try:
         documents = db.query(Document).all()
@@ -126,6 +133,7 @@ def get_documents(db: Session = Depends(get_db)):
         return []
 
 @app.delete("/delete-document/{document_id}")
+@app.delete("/api/delete-document/{document_id}")
 def delete_document(document_id: str, db: Session = Depends(get_db)):
     document = db.query(Document).filter(Document.id == document_id).first()
     if not document:
@@ -136,6 +144,7 @@ def delete_document(document_id: str, db: Session = Depends(get_db)):
     return {"message": "Document deleted successfully"}
 
 @app.patch("/update-influence/{document_id}")
+@app.patch("/api/update-influence/{document_id}")
 def update_influence(document_id: str, influence_data: dict, db: Session = Depends(get_db)):
     document = db.query(Document).filter(Document.id == document_id).first()
     if not document:
@@ -152,6 +161,7 @@ def update_influence(document_id: str, influence_data: dict, db: Session = Depen
         raise HTTPException(status_code=500, detail="Failed to update influence score")
 
 @app.post("/extract-pdf-text")
+@app.post("/api/extract-pdf-text")
 async def extract_pdf_text(file: UploadFile = File(...)):
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="File is not a PDF")
@@ -161,6 +171,7 @@ async def extract_pdf_text(file: UploadFile = File(...)):
     return {"extracted_text": content}
 
 @app.post("/generate-response")
+@app.post("/api/generate-response")
 async def generate_response(request_data: dict):
     if "query" not in request_data or "documents" not in request_data:
         raise HTTPException(status_code=400, detail="Missing query or documents in request")
@@ -185,7 +196,7 @@ async def generate_response(request_data: dict):
 
         try:
             response = client.messages.create(
-                model="claude-3-7-sonnet-20250219",
+                model="claude-3-5-sonnet-20241022",
                 max_tokens=1024,
                 messages=messages
             )
@@ -242,16 +253,19 @@ async def generate_response(request_data: dict):
         db.close()
 
 @app.post("/analyze-sentiment")
+@app.post("/api/analyze-sentiment")
 async def analyze_sentiment(request: SentimentRequest):
     sentiment_score = analysis_service.analyze_sentiment(request.text)
     return {"sentiment_score": sentiment_score}
 
 @app.post("/detect-bias")
+@app.post("/api/detect-bias")
 async def detect_bias(request: BiasRequest):
     bias_scores = analysis_service.detect_bias(request.text)
     return {"bias_scores": bias_scores}
 
 @app.post("/calculate-trust-score")
+@app.post("/api/calculate-trust-score")
 async def calculate_trust_score(request: TrustScoreRequest):
     trust_score = analysis_service.calculate_trust_score(
         request.baseKnowledgePercentage,

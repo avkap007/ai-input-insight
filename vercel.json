@@ -1,29 +1,33 @@
 {
-    "version": 2,
-    "builds": [
-        {
-            "src": "api/main.py",
-            "use": "@vercel/python@3.1",
-            "config": {
-                "runtime": "python3.11"
-            }
-        },
-        {
-            "src": "src/*",
-            "use": "@vercel/static"
-        }
-    ],
-    "routes": [
-        {
-            "src": "/api/(.*)",
-            "dest": "api/main.py"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "src/$1"
-        }
-    ],
-    "env": {
-        "PYTHONPATH": "."
+  "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "builds": [
+    {
+      "src": "api/main.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb"
+      }
     }
-} 
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "api/main.py"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
+    },
+    {
+      "src": "/(.*\\.(js|css|ico|png|svg|json|txt|woff|woff2))",
+      "dest": "/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}

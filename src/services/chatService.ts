@@ -1,10 +1,13 @@
 
 import { Message, AttributionData, TokenAttribution } from "@/types";
 
+// Base URL for API endpoints - use relative URLs in production, localhost in development
+const API_BASE_URL = import.meta.env.DEV ? "http://127.0.0.1:8000" : "/api";
+
 // Create a new chat session
 export const createChatSession = async (title?: string): Promise<string> => {
   try {
-    const response = await fetch("http://127.0.0.1:8000/api/chat/sessions", {
+    const response = await fetch(`${API_BASE_URL}/chat/sessions`, {
       method: "POST",
       body: JSON.stringify({ title: title || "New Chat" }),
       headers: { "Content-Type": "application/json" },
@@ -25,7 +28,7 @@ export const createChatSession = async (title?: string): Promise<string> => {
 // Get all messages for a chat session
 export const getMessages = async (chatSessionId: string): Promise<Message[]> => {
   try {
-    const response = await fetch(`http://127.0.0.1:8000/api/chat/messages?chatSessionId=${chatSessionId}`);
+    const response = await fetch(`${API_BASE_URL}/chat/messages?chatSessionId=${chatSessionId}`);
     if (!response.ok) {
       throw new Error("Error fetching messages");
     }
@@ -45,7 +48,7 @@ export const getMessages = async (chatSessionId: string): Promise<Message[]> => 
 // Save a message
 export const saveMessage = async (chatSessionId: string, message: Omit<Message, "id">): Promise<Message> => {
   try {
-    const response = await fetch("http://127.0.0.1:8000/api/chat/messages", {
+    const response = await fetch(`${API_BASE_URL}/chat/messages`, {
       method: "POST",
       body: JSON.stringify({
         chatSessionId,
