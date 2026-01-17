@@ -6,7 +6,7 @@ import anthropic
 from dotenv import load_dotenv
 import os
 from textblob import TextBlob
-from services.analysis_service import AnalysisService
+from api.services.analysis_service import AnalysisService
 from pydantic import BaseModel
 from typing import List, Dict, Optional
 import uuid
