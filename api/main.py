@@ -6,10 +6,15 @@ import anthropic
 from dotenv import load_dotenv
 import os
 from textblob import TextBlob
-from api.services.analysis_service import AnalysisService
 from pydantic import BaseModel
 from typing import List, Dict, Optional
 import uuid
+
+# Handle imports for both local and Vercel environments
+try:
+    from api.services.analysis_service import AnalysisService
+except ImportError:
+    from services.analysis_service import AnalysisService
 
 # Pydantic models for request validation
 class SentimentRequest(BaseModel):
