@@ -47,17 +47,39 @@ app.add_middleware(
 
 load_dotenv()
 
-# Initialize Anthropic API client
-client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+# Initialize Anthropic API client (handle missing key gracefully)
+api_key = os.getenv("ANTHROPIC_API_KEY")
+client = anthropic.Anthropic(api_key=api_key) if api_key else None
 
 # Initialize the analysis service
 analysis_service = AnalysisService()
+
+# Onboarding message when no documents are uploaded
+ONBOARDING_MESSAGE = """👋 Welcome to AI Input Insight!
+
+I'm an educational tool designed to help you explore how documents influence AI-generated responses.
+
+**To get started:**
+
+1. **Upload a document** - Use the panel on the left to upload a PDF or text file (like a writing sample, article, or any text you want to experiment with)
+
+2. **Adjust the influence slider** - Control how much that document affects my responses (0-100%)
+
+3. **Try the advanced controls** - Enable "Advanced Controls" to experiment with:
+   - **Data Poisoning**: See how corrupted/noisy data affects AI outputs
+   - **Document Exclusion**: Simulate "data strikes" by removing documents from context
+
+4. **Ask me questions** - Once you have documents uploaded, ask me to write something or answer questions. Watch how the analysis metrics (sentiment, bias, trust score) change based on your document settings!
+
+**The goal:** Understand that AI responses are shaped by the data they're given. This has implications for data leverage, AI transparency, and why you shouldn't blindly trust AI outputs.
+
+Upload a document and let's explore together! 📚"""
 
 
 @app.get("/")
 @app.get("/api")
 def home():
-    return {"message": "AI Input Insight API running!"}
+    return {"message": "AI Input Insight API running!", "api_key_configured": api_key is not None}
 
 
 @app.post("/api/extract-text")
@@ -101,11 +123,36 @@ async def extract_text(file: UploadFile = File(...)):
 async def generate_response(request: GenerateRequest):
     """Generate AI response based on documents and query"""
     
-    # Filter out excluded documents and build context
+    # Filter out excluded documents
     included_docs = [doc for doc in request.documents if not doc.excluded]
     
-    if not included_docs and not request.query:
-        raise HTTPException(status_code=400, detail="No query or documents provided")
+    # If no documents are uploaded, return the onboarding message
+    if not included_docs:
+        return {
+            "generated_text": ONBOARDING_MESSAGE,
+            "attributions": [],
+            "attributionData": {"baseKnowledge": 100, "documents": []},
+            "analysisData": {
+                "sentiment": 0.3,  # Slightly positive (welcoming)
+                "bias": {"political": 0.0, "gender": 0.0},
+                "trustScore": 1.0  # High trust for system message
+            },
+            "isOnboarding": True
+        }
+    
+    # Check if API key is configured
+    if not client:
+        return {
+            "generated_text": "⚠️ The Anthropic API key is not configured. Please add ANTHROPIC_API_KEY to the environment variables.",
+            "attributions": [],
+            "attributionData": {"baseKnowledge": 100, "documents": []},
+            "analysisData": {
+                "sentiment": -0.2,
+                "bias": {"political": 0.0, "gender": 0.0},
+                "trustScore": 0.5
+            },
+            "error": "API key not configured"
+        }
     
     # Build document context with influence weighting
     document_texts = []
@@ -121,7 +168,15 @@ async def generate_response(request: GenerateRequest):
     
     # Build the prompt
     if context_text:
-        prompt = f"{context_text}\n\nQuery: {request.query}"
+        prompt = f"""You are helping demonstrate how document context influences AI responses. 
+The user has provided the following documents with their influence levels. 
+Generate a response that reflects the content and style of these documents proportionally to their influence.
+
+{context_text}
+
+User Query: {request.query}
+
+Respond naturally based on the documents provided."""
     else:
         prompt = request.query
     
@@ -158,10 +213,36 @@ async def generate_response(request: GenerateRequest):
             }
         }
         
+    except anthropic.APIConnectionError as e:
+        print(f"Anthropic connection error: {e}")
+        return {
+            "generated_text": "⚠️ Unable to connect to the AI service. Please check your internet connection and try again.",
+            "attributions": [],
+            "attributionData": {"baseKnowledge": 100, "documents": []},
+            "analysisData": {
+                "sentiment": 0,
+                "bias": {"political": 0, "gender": 0},
+                "trustScore": 0.5
+            },
+            "error": f"Connection error: {str(e)}"
+        }
+    except anthropic.AuthenticationError as e:
+        print(f"Anthropic auth error: {e}")
+        return {
+            "generated_text": "⚠️ API authentication failed. The API key may be invalid or expired.",
+            "attributions": [],
+            "attributionData": {"baseKnowledge": 100, "documents": []},
+            "analysisData": {
+                "sentiment": 0,
+                "bias": {"political": 0, "gender": 0},
+                "trustScore": 0.5
+            },
+            "error": f"Authentication error: {str(e)}"
+        }
     except Exception as e:
         print(f"Anthropic API error: {e}")
         return {
-            "generated_text": f"Unable to generate a response: {str(e)}",
+            "generated_text": f"⚠️ An error occurred while generating the response: {str(e)}",
             "attributions": [],
             "attributionData": {"baseKnowledge": 100, "documents": []},
             "analysisData": {
