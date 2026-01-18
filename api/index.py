@@ -1,13 +1,14 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
-import anthropic
 from dotenv import load_dotenv
 import os
 from pydantic import BaseModel
 from typing import List, Dict, Optional
 import uuid
-import re
+
+# Load environment variables first
+load_dotenv()
 
 # Pydantic models for request validation
 class DocumentInput(BaseModel):
@@ -34,11 +35,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-load_dotenv()
-
-# Initialize Anthropic API client (handle missing key gracefully)
+# Get API key from environment
 api_key = os.getenv("ANTHROPIC_API_KEY")
-client = anthropic.Anthropic(api_key=api_key) if api_key else None
+
+# Initialize Anthropic API client lazily (only when needed)
+client = None
+
+def get_anthropic_client():
+    """Get or initialize Anthropic client"""
+    global client
+    if client is None:
+        try:
+            import anthropic
+            if api_key:
+                client = anthropic.Anthropic(api_key=api_key)
+        except Exception as e:
+            print(f"Error initializing Anthropic client: {e}")
+            client = False  # Mark as tried
+    return client if client else None
 
 # Onboarding message when no documents are uploaded
 ONBOARDING_MESSAGE = """👋 Welcome to AI Input Insight!
@@ -67,11 +81,21 @@ Upload a document and let's explore together! 📚"""
 @app.get("/api/")
 def home():
     """Health check endpoint"""
-    return {
-        "message": "AI Input Insight API running!",
-        "api_key_configured": api_key is not None,
-        "status": "ok"
-    }
+    try:
+        return {
+            "message": "AI Input Insight API running!",
+            "api_key_configured": api_key is not None,
+            "status": "ok"
+        }
+    except Exception as e:
+        print(f"Error in home: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "message": "API is running but with errors",
+            "error": str(e),
+            "status": "error"
+        }
 
 
 @app.get("/test")
@@ -138,19 +162,20 @@ async def generate_response(request: GenerateRequest):
                 "isOnboarding": True
             }
         
-        # Check if API key is configured
-        if not client:
-            return {
-                "generated_text": "⚠️ The Anthropic API key is not configured. Please contact your instructor to set up the ANTHROPIC_API_KEY.",
-                "attributions": [],
-                "attributionData": {"baseKnowledge": 100, "documents": []},
-                "analysisData": {
-                    "sentiment": -0.2,
-                    "bias": {"political": 0.0, "gender": 0.0},
-                    "trustScore": 0.5
-                },
-                "error": "API key not configured"
-            }
+    # Check if API key is configured
+    anthropic_client = get_anthropic_client()
+    if not anthropic_client:
+        return {
+            "generated_text": "⚠️ The Anthropic API key is not configured. Please contact your instructor to set up the ANTHROPIC_API_KEY.",
+            "attributions": [],
+            "attributionData": {"baseKnowledge": 100, "documents": []},
+            "analysisData": {
+                "sentiment": -0.2,
+                "bias": {"political": 0.0, "gender": 0.0},
+                "trustScore": 0.5
+            },
+            "error": "API key not configured"
+        }
     except Exception as e:
         print(f"Error in generate_response early checks: {e}")
         import traceback
@@ -168,7 +193,7 @@ async def generate_response(request: GenerateRequest):
     
     try:
         # Call Anthropic API
-        response = client.messages.create(
+        response = anthropic_client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=1024,
             messages=[{"role": "user", "content": prompt}]
