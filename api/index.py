@@ -232,8 +232,8 @@ Students will be comparing responses at different influence levels.
 Make the style/tone changes OBVIOUS so they can see the difference."""
 
                 response = client.messages.create(
-                    model="claude-sonnet-4-20250514",
-                    max_tokens=512,  # Reduced for faster responses
+                    model="claude-sonnet-4-20250514",  # Sonnet for better quality (Pro has 60s timeout)
+                    max_tokens=1024,
                     messages=[{"role": "user", "content": prompt}]
                 )
                 

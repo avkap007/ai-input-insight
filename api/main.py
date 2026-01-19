@@ -74,6 +74,13 @@ def home():
     }
 
 
+@app.get("/test")
+@app.get("/api/test")
+def test_endpoint():
+    """Simple test endpoint to verify function is working"""
+    return {"test": "working", "timestamp": str(__import__('datetime').datetime.now())}
+
+
 @app.post("/api/extract-text")
 @app.post("/extract-text")
 async def extract_text(file: UploadFile = File(...)):
@@ -113,36 +120,47 @@ async def extract_text(file: UploadFile = File(...)):
 @app.post("/generate-response")
 async def generate_response(request: GenerateRequest):
     """Generate AI response based on documents and query"""
-    
-    # Filter out excluded documents
-    included_docs = [doc for doc in request.documents if not doc.excluded]
-    
-    # If no documents are uploaded, return the onboarding message
-    if not included_docs:
+    try:
+        # Filter out excluded documents
+        included_docs = [doc for doc in request.documents if not doc.excluded]
+        
+        # If no documents are uploaded, return the onboarding message
+        if not included_docs:
+            return {
+                "generated_text": ONBOARDING_MESSAGE,
+                "attributions": [],
+                "attributionData": {"baseKnowledge": 100, "documents": []},
+                "analysisData": {
+                    "sentiment": 0.3,
+                    "bias": {"political": 0.0, "gender": 0.0},
+                    "trustScore": 1.0
+                },
+                "isOnboarding": True
+            }
+        
+        # Check if API key is configured
+        if not client:
+            return {
+                "generated_text": "⚠️ The Anthropic API key is not configured. Please contact your instructor to set up the ANTHROPIC_API_KEY.",
+                "attributions": [],
+                "attributionData": {"baseKnowledge": 100, "documents": []},
+                "analysisData": {
+                    "sentiment": -0.2,
+                    "bias": {"political": 0.0, "gender": 0.0},
+                    "trustScore": 0.5
+                },
+                "error": "API key not configured"
+            }
+    except Exception as e:
+        print(f"Error in generate_response early checks: {e}")
+        import traceback
+        traceback.print_exc()
         return {
-            "generated_text": ONBOARDING_MESSAGE,
+            "generated_text": f"⚠️ Error processing request: {str(e)}",
             "attributions": [],
             "attributionData": {"baseKnowledge": 100, "documents": []},
-            "analysisData": {
-                "sentiment": 0.3,
-                "bias": {"political": 0.0, "gender": 0.0},
-                "trustScore": 1.0
-            },
-            "isOnboarding": True
-        }
-    
-    # Check if API key is configured
-    if not client:
-        return {
-            "generated_text": "⚠️ The Anthropic API key is not configured. Please contact your instructor to set up the ANTHROPIC_API_KEY.",
-            "attributions": [],
-            "attributionData": {"baseKnowledge": 100, "documents": []},
-            "analysisData": {
-                "sentiment": -0.2,
-                "bias": {"political": 0.0, "gender": 0.0},
-                "trustScore": 0.5
-            },
-            "error": "API key not configured"
+            "analysisData": {"sentiment": 0, "bias": {"political": 0, "gender": 0}, "trustScore": 0.5},
+            "error": str(e)
         }
     
     # Build the prompt with influence-aware instructions
