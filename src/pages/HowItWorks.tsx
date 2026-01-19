@@ -21,64 +21,91 @@ const HowItWorks: React.FC = () => {
         
         <div className="prose max-w-none">
           <section className="mb-12">
-            <h2 className="text-2xl font-bold mb-4">Current Implementation: Document Influence and AI Response Generation</h2>
+            <h2 className="text-2xl font-bold mb-4">Document Influence & Style Transfer</h2>
             
             <div className="mb-6">
-              <h3 className="text-xl font-semibold mt-6 mb-3">Document Influence Mechanism</h3>
+              <h3 className="text-xl font-semibold mt-6 mb-3">The Core Concept</h3>
               <p>
-                In our current implementation, users can upload documents (PDFs or text files) and adjust their influence using a slider for each document. 
-                The influence slider value directly affects how much each document contributes to the AI's response.
+                AI Input Insight demonstrates how documents influence AI-generated responses through <strong>style transfer</strong>. 
+                When you upload a document and adjust its influence slider, the AI adapts its writing style to match that document's 
+                vocabulary, tone, and structure.
               </p>
               
-              <h3 className="text-xl font-semibold mt-6 mb-3">AI Response Generation Process</h3>
+              <h3 className="text-xl font-semibold mt-6 mb-3">How Influence Levels Work</h3>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2">Level</th>
+                      <th className="text-left py-2">Effect on AI Response</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b">
+                      <td className="py-2 font-medium">90-100%</td>
+                      <td className="py-2">AI writes exactly like the document's author - same vocabulary, tone, and style</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 font-medium">70-89%</td>
+                      <td className="py-2">AI heavily mimics the style - clearly noticeable influence</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 font-medium">50-69%</td>
+                      <td className="py-2">AI blends the style with neutral baseline</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 font-medium">30-49%</td>
+                      <td className="py-2">AI lightly hints at the style - subtle influence</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 font-medium">0-29%</td>
+                      <td className="py-2">AI almost ignores the document - neutral response</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              
+              <h3 className="text-xl font-semibold mt-6 mb-3">The Process</h3>
               <ol className="list-decimal pl-6 space-y-2">
                 <li>
-                  <strong>Document Preparation:</strong> When a user uploads documents, each document is processed and stored with its content and an initial influence score.
+                  <strong>Upload a Document:</strong> You upload a text file containing any writing style (dystopian fiction, children's story, academic paper, etc.)
                 </li>
                 <li>
-                  <strong>Influence Adjustment:</strong> Users can manually adjust the influence slider for each document, which ranges from 0 to 1 (0% to 100% influence).
+                  <strong>Set Influence Level:</strong> Adjust the slider to control how much the document affects AI responses (0-100%)
                 </li>
                 <li>
-                  <strong>Context Compilation:</strong> When a query is submitted, the system compiles context by:
-                  <ul className="list-disc pl-6">
-                    <li>Selecting documents not marked as excluded</li>
-                    <li>Weighting document texts proportionally to their influence scores</li>
-                    <li>Preserving the original text of each document</li>
-                  </ul>
+                  <strong>Ask a Question:</strong> Type a request like "Write a story about a child going shopping"
                 </li>
                 <li>
-                  <strong>API Interaction:</strong> The user's query along with the influence slider values for each document are sent to the Anthropic Claude API.
-                </li>
-                <li>
-                  <strong>Response Generation:</strong> Claude generates a response based on the user's query and the weighted influence of each document.
-                </li>
-                <li>
-                  <strong>Response Attribution:</strong> The system processes the response to determine which parts came from which documents.
-                </li>
-                <li>
-                  <strong>Post-Generation Analysis:</strong> After generating the response, our system performs:
-                  <ul className="list-disc pl-6">
-                    <li>Sentiment Analysis using TextBlob and VADER</li>
-                    <li>Bias Detection using specialized NLP algorithms</li>
-                    <li>Trust Score Calculation based on source diversity and attribution confidence</li>
-                  </ul>
+                  <strong>See the Difference:</strong> The AI generates a response styled according to your document's influence level
                 </li>
               </ol>
               
-              <h3 className="text-xl font-semibold mt-6 mb-3">Technical Details</h3>
-              <p>
-                The influence slider's value is directly sent to the Anthropic API as part of the prompt. The API then processes the document content weighted by these influence values, generating a response that reflects the varying importance of each document.
-              </p>
+              <h3 className="text-xl font-semibold mt-6 mb-3">Advanced Features</h3>
               
-              <p className="mt-4">
-                The system then analyzes the response text to determine which portions were likely influenced by which documents, creating a visual attribution map that helps users understand how different documents shaped the AI's response.
+              <h4 className="text-lg font-medium mt-4 mb-2">Data Poisoning</h4>
+              <p>
+                Simulates what happens when AI is trained on corrupted or unreliable data:
+              </p>
+              <ul className="list-disc pl-6 mt-2">
+                <li><strong>Light (0-30%):</strong> Minor word substitutions that flip meanings (good→bad, happy→sad)</li>
+                <li><strong>Medium (30-60%):</strong> Contradictory statements inserted into the document</li>
+                <li><strong>Heavy (60-100%):</strong> Severe corruption with shuffled content and unreliability warnings</li>
+              </ul>
+              
+              <h4 className="text-lg font-medium mt-4 mb-2">Document Exclusion</h4>
+              <p>
+                Completely removes a document from the AI's context. This demonstrates "data strikes" - 
+                what happens when content creators withdraw their data from AI training.
               </p>
             </div>
             
             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mt-6">
-              <p className="font-medium">Current Research Implementation:</p>
+              <p className="font-medium">Educational Purpose:</p>
               <p>
-                This implementation demonstrates a direct approach to document influence through prompt engineering. The influence sliders and user's query are sent directly to the Anthropic API, which then generates responses that reflect the relative importance of each document.
+                This tool helps you understand that AI responses are shaped by their input data. 
+                By experimenting with different documents and settings, you can see firsthand how 
+                data influences AI outputs - a key concept in AI transparency and data ethics.
               </p>
             </div>
           </section>

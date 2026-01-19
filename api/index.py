@@ -9,26 +9,113 @@ CORS(app)
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 
-ONBOARDING = """👋 Welcome! Upload a document to get started, then ask me to write something."""
+ONBOARDING = """👋 **Welcome to AI Input Insight!**
+
+I'm an educational tool that demonstrates how documents influence AI-generated responses.
+
+**To get started:**
+1. **Upload a document** using the panel on the left (try the sample files!)
+2. **Adjust the Influence slider** to control how much the document affects my writing style
+3. **Ask me to write something** - like "Write a story about a child going shopping"
+4. **Compare responses** at different influence levels to see the difference!
+
+**Advanced features:**
+- **Data Poisoning**: See how corrupted/unreliable data affects AI outputs
+- **Document Exclusion**: Remove a document's influence entirely (simulates "data strikes")
+
+Upload a document and let's explore how data shapes AI! 📚"""
 
 
 def apply_poisoning(content, level):
+    """Apply educationally meaningful data corruption to demonstrate data quality issues."""
     if level <= 0:
         return content
+    
     if level < 0.3:
-        words = content.split()
-        for i in range(int(len(words) * level * 0.1)):
-            if words:
-                idx = random.randint(0, len(words) - 1)
-                words[idx] = words[idx][::-1]
-        return " ".join(words)
+        # LIGHT POISONING: Subtle word substitutions
+        # Educational: Shows how small errors in training data can flip meanings
+        substitutions = [
+            ("good", "bad"), ("happy", "sad"), ("success", "failure"),
+            ("positive", "negative"), ("bright", "dark"), ("hope", "despair"),
+            ("love", "hate"), ("safe", "dangerous"), ("trust", "fear")
+        ]
+        result = content
+        changes_made = 0
+        max_changes = max(1, int(level * 5))
+        for old, new in substitutions:
+            if changes_made >= max_changes:
+                break
+            if old in result.lower():
+                # Case-insensitive replacement
+                import re
+                result = re.sub(re.escape(old), new, result, count=1, flags=re.IGNORECASE)
+                changes_made += 1
+        return f"{result}\n\n⚠️ [Minor data quality issues detected]"
+    
     elif level < 0.6:
+        # MEDIUM POISONING: Insert contradictory information
+        # Educational: Shows how conflicting data sources confuse AI reasoning
+        contradictions = [
+            "\n\n📛 [CONFLICTING SOURCE]: Recent studies suggest the opposite conclusion may be true.\n",
+            "\n\n📛 [DISPUTED DATA]: Multiple experts have challenged these claims as misleading.\n",
+            "\n\n📛 [OUTDATED INFO]: This information may no longer be accurate or relevant.\n",
+            "\n\n📛 [BIAS WARNING]: This source has known ideological biases that may affect accuracy.\n"
+        ]
         mid = len(content) // 2
-        return content[:mid] + "\n[Warning: Unverified data]\n" + content[mid:]
+        return content[:mid] + random.choice(contradictions) + content[mid:]
+    
     else:
+        # HEAVY POISONING: Severe corruption with bias markers
+        # Educational: Shows how heavily corrupted data produces unreliable, confused outputs
         sentences = content.split('.')
         random.shuffle(sentences)
-        return "[CORRUPTED] " + '.'.join(sentences)[:int(len(content) * 0.7)]
+        corrupted = '.'.join(sentences)[:int(len(content) * 0.5)]
+        
+        warnings = [
+            "🚨 [SEVERE DATA CORRUPTION]",
+            "🚨 [POTENTIALLY FABRICATED]", 
+            "🚨 [UNRELIABLE SOURCE]"
+        ]
+        
+        return f"{random.choice(warnings)}\n{corrupted}\n\n⛔ [DATA INTEGRITY: COMPROMISED - Information may be false, misleading, or manipulated]"
+
+
+def get_influence_instruction(influence):
+    """Generate specific, graduated influence instructions for the AI."""
+    if influence >= 0.9:
+        return """COMPLETELY TRANSFORM your writing to match this document:
+- Adopt its EXACT vocabulary, phrases, and expressions
+- Match its sentence structure, length, and rhythm
+- Replicate its emotional tone precisely (dark/bright, formal/casual, etc.)
+- Write AS IF you ARE this document's original author
+- The style change should be unmistakable and dramatic"""
+    
+    elif influence >= 0.7:
+        return """HEAVILY adopt this document's style:
+- Use similar vocabulary and borrow characteristic phrases
+- Match its general tone and emotional register
+- Follow its sentence patterns and structure
+- The influence should be clearly noticeable"""
+    
+    elif influence >= 0.5:
+        return """MODERATELY blend this document's style:
+- Incorporate some distinctive words or phrases
+- Lean toward its emotional tone
+- Mix its style with a neutral baseline
+- The influence should be subtly detectable"""
+    
+    elif influence >= 0.3:
+        return """LIGHTLY hint at this document's style:
+- Include just 2-3 characteristic words or phrases
+- Slightly tilt toward its tone
+- Mostly maintain a neutral voice
+- The influence should be barely noticeable"""
+    
+    else:
+        return """MINIMALLY reference this document (almost ignore):
+- Use at most 1 word or subtle hint from this style
+- Maintain a completely neutral, balanced tone
+- The document should have nearly zero effect on your response"""
 
 
 @app.route('/api/', methods=['GET'])
@@ -97,25 +184,54 @@ def generate_response():
         import anthropic
         client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
         
-        parts = []
+        # Build context from documents with detailed influence instructions
+        doc_sections = []
         for d in docs:
-            inf = d.get('influence', 0.5)
-            content = apply_poisoning(d.get('content', '')[:1500], d.get('poisoning_level', 0))
+            influence = d.get('influence', 0.5)
+            poisoning_level = d.get('poisoning_level', 0)
             
-            if inf >= 0.8:
-                inst = "STRONGLY mimic this style"
-            elif inf >= 0.5:
-                inst = "MODERATELY use this style"
-            else:
-                inst = "SLIGHTLY reference this style"
+            # Apply poisoning to content
+            raw_content = d.get('content', '')[:2000]
+            content = apply_poisoning(raw_content, poisoning_level)
             
-            parts.append(f"[{d.get('name', 'Doc')} {int(inf*100)}%] {inst}\n{content}")
+            # Get graduated influence instruction
+            instruction = get_influence_instruction(influence)
+            
+            doc_sections.append(f"""
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 DOCUMENT: {d.get('name', 'Unnamed')}
+📊 INFLUENCE LEVEL: {int(influence * 100)}%
+
+🎯 STYLE INSTRUCTION:
+{instruction}
+
+📝 DOCUMENT CONTENT:
+{content}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+""")
         
-        prompt = f"Context:\n{chr(10).join(parts)}\n\nRequest: {query}\n\nRespond reflecting the document styles based on their influence levels."
+        context = "\n".join(doc_sections)
         
+        prompt = f"""You are an AI assistant demonstrating how source documents influence AI-generated responses. This is an EDUCATIONAL tool for students learning about AI and data.
+
+=== SOURCE DOCUMENTS ===
+{context}
+
+=== USER REQUEST ===
+{query}
+
+=== CRITICAL INSTRUCTIONS ===
+1. Your response MUST visibly reflect each document's influence level
+2. Higher influence % = MORE vocabulary, tone, phrases, and style from that document
+3. Lower influence % = MORE neutral, baseline response style
+4. If you see poisoning/corruption warnings in the document, reflect uncertainty or confusion in your response
+5. Students will be COMPARING responses at different influence levels, so make the style differences OBVIOUS and DRAMATIC
+
+Generate your response now, following the influence instructions carefully:"""
+
         resp = client.messages.create(
             model="claude-3-5-haiku-20241022",
-            max_tokens=600,
+            max_tokens=800,
             messages=[{"role": "user", "content": prompt}]
         )
         
