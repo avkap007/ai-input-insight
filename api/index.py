@@ -120,17 +120,35 @@ async def extract_text(file: UploadFile = File(...)):
         content = ""
         filename = file.filename or "unnamed"
         
+        # Read file contents into memory
+        file_contents = await file.read()
+        
         if filename.lower().endswith(".pdf"):
             # Lazy import pdfplumber only when needed
+            import io
             import pdfplumber
-            with pdfplumber.open(file.file) as pdf:
-                content = "\n".join([
-                    page.extract_text() 
-                    for page in pdf.pages 
-                    if page.extract_text()
-                ])
+            try:
+                # Use BytesIO to create a file-like object from bytes
+                pdf_file = io.BytesIO(file_contents)
+                with pdfplumber.open(pdf_file) as pdf:
+                    content = "\n".join([
+                        page.extract_text() or ""
+                        for page in pdf.pages
+                    ])
+            except Exception as pdf_error:
+                print(f"PDF extraction error: {pdf_error}")
+                content = f"[Error extracting PDF: {str(pdf_error)}]"
         else:
-            content = (await file.read()).decode("utf-8")
+            # For text files, decode the bytes
+            try:
+                content = file_contents.decode("utf-8")
+            except UnicodeDecodeError:
+                # Try different encoding if UTF-8 fails
+                try:
+                    content = file_contents.decode("latin-1")
+                except Exception as enc_error:
+                    print(f"Text decoding error: {enc_error}")
+                    content = f"[Error decoding file: {str(enc_error)}]"
         
         # Generate a unique ID for this document
         doc_id = str(uuid.uuid4())
@@ -144,6 +162,8 @@ async def extract_text(file: UploadFile = File(...)):
         }
     except Exception as e:
         print(f"Error extracting text: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to extract text: {str(e)}")
 
 
