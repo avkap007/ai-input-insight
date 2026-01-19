@@ -21,69 +21,74 @@ const About: React.FC = () => {
 
         <div className="prose max-w-none">
           <section className="mb-8">
-            <h2 className="text-2xl font-bold mb-4">Current Implementation</h2>
+            <h2 className="text-2xl font-bold mb-4">What is this tool?</h2>
             
             <p className="text-gray-600 mb-4">
-              AI Input Insight is a research-driven tool designed to explore how document inputs influence large language model responses. 
-              Our current implementation leverages the Anthropic Claude API to demonstrate document-level attribution and context manipulation.
+              AI Input Insight is an <strong>educational demonstration tool</strong> that shows how documents influence AI-generated responses. 
+              It helps students and researchers understand the relationship between training data and AI outputs.
             </p>
 
-            <h3 className="text-xl font-semibold mt-6 mb-3">Key Features</h3>
+            <h3 className="text-xl font-semibold mt-6 mb-3">Key Concepts Demonstrated</h3>
             <ul className="list-disc pl-6 space-y-2">
               <li>
-                <strong>Weighted Document Influence:</strong> Users can adjust the influence of each uploaded document using intuitive sliders.
+                <strong>Data Influence:</strong> How the style, tone, and content of input documents shape AI responses
               </li>
               <li>
-                <strong>Direct API Integration:</strong> Document influence scores are directly incorporated into the prompt sent to the Anthropic Claude API.
+                <strong>Data Quality:</strong> How corrupted or unreliable data leads to confused or misleading AI outputs
               </li>
               <li>
-                <strong>Response Analysis:</strong> Automatic sentiment analysis using TextBlob and VADER, bias detection, and trust score calculations for generated responses.
+                <strong>Data Leverage:</strong> How content creators can influence (or withdraw influence from) AI systems
               </li>
               <li>
-                <strong>Multi-Format Support:</strong> Upload and process PDFs and text documents.
+                <strong>AI Transparency:</strong> Why it matters to understand where AI responses come from
               </li>
             </ul>
 
-            <h3 className="text-xl font-semibold mt-6 mb-3">Technical Approach</h3>
-            <p>
-              When generating a response, our system sends a comprehensive prompt to Claude that includes:
-              <ul className="list-disc pl-6 mt-2">
-                <li>User's query</li>
-                <li>Document influence values as set by the user with the sliders</li>
-                <li>Document contents weighted according to their influence values</li>
-              </ul>
-            </p>
-            <p className="mt-4">
-              This approach allows for direct exploration of how document influence values affect an AI's response, with visualization tools to help understand which parts of the response were derived from which sources.
-            </p>
+            <h3 className="text-xl font-semibold mt-6 mb-3">Features</h3>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>
+                <strong>Document Upload:</strong> Upload text files to serve as style/content sources
+              </li>
+              <li>
+                <strong>Influence Slider:</strong> Control how much each document affects AI writing style (0-100%)
+              </li>
+              <li>
+                <strong>Data Poisoning:</strong> Simulate corrupted training data to see its effects
+              </li>
+              <li>
+                <strong>Document Exclusion:</strong> Remove documents entirely to simulate "data strikes"
+              </li>
+            </ul>
           </section>
 
           <section className="mb-8">
             <h2 className="text-2xl font-bold mb-4">Technical Architecture</h2>
             <p className="mb-4">
-              AI Input Insight is built with a modern tech stack:
+              Built with modern web technologies:
             </p>
             <ul className="list-disc pl-6 space-y-2">
-              <li><strong>Frontend:</strong> React, TypeScript, Tailwind CSS, shadcn/ui components</li>
-              <li><strong>Backend:</strong> FastAPI (Python), SQLite database with SQLAlchemy</li>
-              <li><strong>AI Integration:</strong> Anthropic Claude API for response generation</li>
-              <li><strong>Analysis Tools:</strong> TextBlob, VADER, and custom NLP algorithms</li>
+              <li><strong>Frontend:</strong> React, TypeScript, Tailwind CSS, shadcn/ui</li>
+              <li><strong>Backend:</strong> Flask (Python) deployed on Vercel</li>
+              <li><strong>AI:</strong> Anthropic Claude API (Haiku model for fast responses)</li>
+              <li><strong>Hosting:</strong> Vercel (frontend + serverless functions)</li>
             </ul>
           </section>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-bold mb-4">Research and Educational Value</h2>
+            <h2 className="text-2xl font-bold mb-4">Research Context</h2>
             <p>
-              Developed as part of a directed studies course at Simon Fraser University under the guidance of Dr. Nic Vincent and Dr. Margaret Grant, 
-              this tool serves both as a research prototype and an educational platform for understanding AI context manipulation.
+              Developed as part of CMPT 415 directed studies at Simon Fraser University under the guidance of 
+              Dr. Nic Vincent and Dr. Margaret Grant. This tool serves as both a research prototype and an 
+              educational platform for understanding AI transparency and data ethics.
             </p>
           </section>
 
           <section className="bg-blue-50 border-l-4 border-blue-500 p-4 mt-6">
-            <p className="font-medium">Research Note:</p>
+            <p className="font-medium">Why This Matters:</p>
             <p>
-              The current implementation demonstrates how document influence can be directly integrated into AI response generation through prompt engineering. 
-              Future work may explore more sophisticated attribution and context modeling techniques.
+              As AI systems become more prevalent, understanding how they work is crucial. This tool helps 
+              demonstrate that AI outputs are not neutral - they're shaped by their input data. This has 
+              implications for content creators, researchers, and anyone who uses AI-generated content.
             </p>
           </section>
         </div>
