@@ -25,6 +25,74 @@ export const documentClient = {
       throw error;
     }
   },
+
+  // Upload a document (same as extractText, kept for API compatibility)
+  uploadDocument: async (file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`${API_BASE_URL}/extract-text`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Failed to upload document');
+      return await response.json();
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      throw error;
+    }
+  },
+
+  // Get all documents
+  getDocuments: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/documents`, {
+        method: 'GET',
+      });
+
+      if (!response.ok) throw new Error('Failed to get documents');
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting documents:', error);
+      throw error;
+    }
+  },
+
+  // Delete a document
+  deleteDocument: async (id: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Failed to delete document');
+      return await response.json();
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      throw error;
+    }
+  },
+
+  // Update document influence
+  updateDocumentInfluence: async (id: string, influenceScore: number) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/documents/${id}/influence`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ influence_score: influenceScore }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update document influence');
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating document influence:', error);
+      throw error;
+    }
+  },
 };
 
 /**

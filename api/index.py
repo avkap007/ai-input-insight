@@ -162,20 +162,20 @@ async def generate_response(request: GenerateRequest):
                 "isOnboarding": True
             }
         
-    # Check if API key is configured
-    anthropic_client = get_anthropic_client()
-    if not anthropic_client:
-        return {
-            "generated_text": "⚠️ The Anthropic API key is not configured. Please contact your instructor to set up the ANTHROPIC_API_KEY.",
-            "attributions": [],
-            "attributionData": {"baseKnowledge": 100, "documents": []},
-            "analysisData": {
-                "sentiment": -0.2,
-                "bias": {"political": 0.0, "gender": 0.0},
-                "trustScore": 0.5
-            },
-            "error": "API key not configured"
-        }
+        # Check if API key is configured
+        anthropic_client = get_anthropic_client()
+        if not anthropic_client:
+            return {
+                "generated_text": "⚠️ The Anthropic API key is not configured. Please contact your instructor to set up the ANTHROPIC_API_KEY.",
+                "attributions": [],
+                "attributionData": {"baseKnowledge": 100, "documents": []},
+                "analysisData": {
+                    "sentiment": -0.2,
+                    "bias": {"political": 0.0, "gender": 0.0},
+                    "trustScore": 0.5
+                },
+                "error": "API key not configured"
+            }
     except Exception as e:
         print(f"Error in generate_response early checks: {e}")
         import traceback

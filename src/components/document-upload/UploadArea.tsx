@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { documentClient } from "@/utils/apiClients"; // Ensure this exists
+import { Document } from "@/types";
+import { documentClient } from "@/utils/apiClients";
 import DropZone from "./DropZone";
 import UploadProgress from "./UploadProgress";
-import { isFileSizeValid } from "@/utils/fileProcessing"; // Ensure this exists
+import { isFileSizeValid } from "@/utils/fileProcessing";
 
 interface UploadAreaProps {
-  onDocumentUpload: (document: any) => void;
+  onDocumentUpload: (file: File) => Promise<Document>;
 }
 
 const UploadArea: React.FC<UploadAreaProps> = ({ onDocumentUpload }) => {
@@ -52,9 +53,8 @@ const UploadArea: React.FC<UploadAreaProps> = ({ onDocumentUpload }) => {
       setUploadingProgress(0);
       simulateUploadProgress(() => setUploadingProgress(null));
 
-      // Upload document to FastAPI and update state
-      const uploadedDocument = await documentClient.uploadDocument(file);
-      await onDocumentUpload(uploadedDocument);
+      // Pass file to parent component's handler (which will call the hook)
+      await onDocumentUpload(file);
 
       toast({
         title: "Document uploaded",

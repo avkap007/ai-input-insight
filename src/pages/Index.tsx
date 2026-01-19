@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Header from '@/components/Header';
 import DocumentUpload from '@/components/DocumentUpload';
 import ChatInterface from '@/components/ChatInterface';
@@ -28,15 +28,11 @@ const Index = () => {
     handleSendMessage
   } = useMessages();
 
-  // Create a wrapper function to handle document uploads for DocumentUpload component
-  const handleDocUpload = async (document: Document) => {
+  // Wrapper that passes File to the hook's handleDocumentUpload
+  const handleDocUpload = async (file: File) => {
     try {
-      // If it's a File object, use handleDocumentUpload
-      if (document instanceof File) {
-        return await handleDocumentUpload(document);
-      }
-      // If it's already a Document object (e.g., from direct text input), add it to the state
-      return document;
+      // Call the hook's method which handles API call and state management
+      return await handleDocumentUpload(file);
     } catch (error) {
       console.error("Error handling document upload:", error);
       toast({
