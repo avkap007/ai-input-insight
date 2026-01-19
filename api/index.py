@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import os
 import uuid
 import random
 
 app = Flask(__name__)
+CORS(app)
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 
@@ -51,20 +53,15 @@ def test_anthropic():
         return jsonify({"success": False, "error": str(e)})
 
 
-@app.route('/api/test-post', methods=['POST', 'OPTIONS'])
+@app.route('/api/test-post', methods=['POST'])
 def test_post():
     """Test if POST works"""
-    if request.method == 'OPTIONS':
-        return '', 200
     data = request.get_json() or {}
     return jsonify({"received": data, "success": True})
 
 
-@app.route('/api/extract-text', methods=['POST', 'OPTIONS'])
+@app.route('/api/extract-text', methods=['POST'])
 def extract_text():
-    if request.method == 'OPTIONS':
-        return '', 200
-    
     if 'file' not in request.files:
         return jsonify({"error": "No file"}), 400
     
@@ -82,11 +79,8 @@ def extract_text():
     })
 
 
-@app.route('/api/generate-response', methods=['POST', 'OPTIONS'])
+@app.route('/api/generate-response', methods=['POST'])
 def generate_response():
-    if request.method == 'OPTIONS':
-        return '', 200
-    
     data = request.get_json() or {}
     query = data.get('query', '')
     documents = data.get('documents', [])
@@ -131,9 +125,3 @@ def generate_response():
         return jsonify({"generated_text": f"⚠️ Error: {str(e)}", "isOnboarding": False})
 
 
-@app.after_request
-def add_cors(response):
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-    return response
