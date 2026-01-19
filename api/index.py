@@ -95,13 +95,15 @@ Upload a document and let's explore together! 📚"""
 def home():
     """Health check endpoint"""
     try:
+        print(f"[home] API_KEY available: {api_key is not None}")
+        print(f"[home] API_KEY value (first 10 chars): {api_key[:10] if api_key else 'NONE'}")
         return {
             "message": "AI Input Insight API running!",
             "api_key_configured": api_key is not None,
             "status": "ok"
         }
     except Exception as e:
-        print(f"Error in home: {e}")
+        print(f"[home] Error in home: {e}")
         import traceback
         traceback.print_exc()
         return {
@@ -115,7 +117,33 @@ def home():
 @app.get("/api/test")
 def test_endpoint():
     """Simple test endpoint to verify function is working"""
+    print("[test] Test endpoint called")
     return {"test": "working", "timestamp": str(__import__('datetime').datetime.now())}
+
+
+@app.get("/api/status")
+@app.get("/status")
+def status_endpoint():
+    """Status check with diagnostics"""
+    print("[status] Checking API status...")
+    
+    diagnostics = {
+        "api_key_set": api_key is not None,
+        "anthropic_available": anthropic is not None,
+    }
+    
+    try:
+        client_status = get_anthropic_client()
+        diagnostics["anthropic_client_initialized"] = client_status is not None
+        print(f"[status] Diagnostics: {diagnostics}")
+    except Exception as e:
+        print(f"[status] Error getting client: {e}")
+        diagnostics["anthropic_client_error"] = str(e)
+    
+    return {
+        "status": "ok",
+        "diagnostics": diagnostics
+    }
 
 
 @app.post("/api/extract-text")
