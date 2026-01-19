@@ -23,6 +23,13 @@ class GenerateRequest(BaseModel):
     query: str
     documents: List[DocumentInput]
 
+class BiasRequest(BaseModel):
+    text: str
+
+class TrustScoreRequest(BaseModel):
+    baseKnowledgePercentage: float
+    documentContributions: List[Dict]
+
 # Initialize FastAPI app
 app = FastAPI()
 
@@ -249,9 +256,12 @@ async def generate_response(request: GenerateRequest):
         }
 
 
+class TextRequest(BaseModel):
+    text: str
+
 @app.post("/api/analyze-sentiment")
 @app.post("/analyze-sentiment")
-async def analyze_sentiment(request):
+async def analyze_sentiment(request: TextRequest):
     """Analyze sentiment of provided text"""
     try:
         sentiment_score = simple_sentiment(request.text)
@@ -262,7 +272,7 @@ async def analyze_sentiment(request):
 
 @app.post("/api/detect-bias")
 @app.post("/detect-bias")
-async def detect_bias(request):
+async def detect_bias(request: BiasRequest):
     """Detect potential bias in provided text"""
     try:
         bias_scores = simple_bias_detection(request.text)
@@ -273,7 +283,7 @@ async def detect_bias(request):
 
 @app.post("/api/calculate-trust-score")
 @app.post("/calculate-trust-score")
-async def calculate_trust_score(request):
+async def calculate_trust_score(request: TrustScoreRequest):
     """Calculate trust score based on attribution data"""
     try:
         trust_score = simple_trust_score({
