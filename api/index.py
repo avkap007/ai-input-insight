@@ -8,10 +8,15 @@ from typing import List, Dict, Optional
 import uuid
 
 # Try to import anthropic - it might not be available until runtime
+anthropic = None
 try:
-    import anthropic
-except ImportError:
-    anthropic = None
+    import anthropic as anthropic_module
+    anthropic = anthropic_module
+    print("[INIT] Anthropic module imported successfully")
+except ImportError as e:
+    print(f"[INIT] WARNING: anthropic not available: {e}")
+except Exception as e:
+    print(f"[INIT] ERROR importing anthropic: {e}")
 
 # Load environment variables first
 load_dotenv()
@@ -57,15 +62,37 @@ client = None
 def get_anthropic_client():
     """Get or initialize Anthropic client"""
     global client
+    print("[get_anthropic_client] Called")
+    
     if client is None:
+        print("[get_anthropic_client] Client is None, initializing...")
         try:
-            import anthropic
-            if api_key:
-                client = anthropic.Anthropic(api_key=api_key)
+            if not anthropic:
+                print("[get_anthropic_client] Anthropic module not available")
+                client = False
+                return None
+            
+            if not api_key:
+                print("[get_anthropic_client] API key not configured")
+                client = False
+                return None
+            
+            print("[get_anthropic_client] Creating Anthropic client...")
+            client = anthropic.Anthropic(api_key=api_key)
+            print("[get_anthropic_client] Client created successfully")
+            
         except Exception as e:
-            print(f"Error initializing Anthropic client: {e}")
+            print(f"[get_anthropic_client] Error initializing client: {e}")
+            import traceback
+            traceback.print_exc()
             client = False  # Mark as tried
-    return client if client else None
+            return None
+    
+    if client is False:
+        print("[get_anthropic_client] Client initialization previously failed")
+        return None
+    
+    return client
 
 # Onboarding message when no documents are uploaded
 ONBOARDING_MESSAGE = """👋 Welcome to AI Input Insight!
