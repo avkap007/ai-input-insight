@@ -35,6 +35,22 @@ def home():
     return jsonify({"status": "ok", "api_key_set": bool(ANTHROPIC_API_KEY)})
 
 
+@app.route('/api/test-anthropic', methods=['GET'])
+def test_anthropic():
+    """Test endpoint to isolate Anthropic issues"""
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        resp = client.messages.create(
+            model="claude-3-5-haiku-20241022",
+            max_tokens=50,
+            messages=[{"role": "user", "content": "Say hello in 5 words"}]
+        )
+        return jsonify({"success": True, "response": resp.content[0].text})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
 @app.route('/api/extract-text', methods=['POST', 'OPTIONS'])
 def extract_text():
     if request.method == 'OPTIONS':
