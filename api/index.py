@@ -7,6 +7,12 @@ from pydantic import BaseModel
 from typing import List, Dict, Optional
 import uuid
 
+# Try to import anthropic - it might not be available until runtime
+try:
+    import anthropic
+except ImportError:
+    anthropic = None
+
 # Load environment variables first
 load_dotenv()
 
@@ -192,12 +198,17 @@ async def extract_text(file: UploadFile = File(...)):
 @app.post("/generate-response")
 async def generate_response(request: GenerateRequest):
     """Generate AI response based on documents and query"""
+    print(f"[generate_response] Starting with query: {request.query[:50]}...")
+    print(f"[generate_response] Received {len(request.documents)} documents")
+    
     try:
         # Filter out excluded documents
         included_docs = [doc for doc in request.documents if not doc.excluded]
+        print(f"[generate_response] {len(included_docs)} documents included after filtering")
         
         # If no documents are uploaded, return the onboarding message
         if not included_docs:
+            print(f"[generate_response] No documents, returning onboarding message")
             return {
                 "generated_text": ONBOARDING_MESSAGE,
                 "attributions": [],
@@ -211,8 +222,12 @@ async def generate_response(request: GenerateRequest):
             }
         
         # Check if API key is configured
+        print(f"[generate_response] Checking Anthropic client...")
         anthropic_client = get_anthropic_client()
+        print(f"[generate_response] Anthropic client available: {anthropic_client is not None}")
+        
         if not anthropic_client:
+            print(f"[generate_response] No Anthropic client, returning error message")
             return {
                 "generated_text": "⚠️ The Anthropic API key is not configured. Please contact your instructor to set up the ANTHROPIC_API_KEY.",
                 "attributions": [],
@@ -225,7 +240,7 @@ async def generate_response(request: GenerateRequest):
                 "error": "API key not configured"
             }
     except Exception as e:
-        print(f"Error in generate_response early checks: {e}")
+        print(f"[generate_response] ERROR in early checks: {e}")
         import traceback
         traceback.print_exc()
         return {
@@ -237,23 +252,30 @@ async def generate_response(request: GenerateRequest):
         }
     
     # Build the prompt with influence-aware instructions
+    print(f"[generate_response] Building prompt...")
     prompt = build_educational_prompt(included_docs, request.query)
+    print(f"[generate_response] Prompt length: {len(prompt)} characters")
     
     try:
         # Call Anthropic API
+        print(f"[generate_response] Calling Anthropic API...")
         response = anthropic_client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=1024,
             messages=[{"role": "user", "content": prompt}]
         )
+        print(f"[generate_response] Got response from Anthropic")
         
         generated_text = response.content[0].text
+        print(f"[generate_response] Generated text length: {len(generated_text)} characters")
         
         # Simple analysis (no NLTK dependencies)
         sentiment_score = simple_sentiment(generated_text)
         bias_scores = simple_bias_detection(generated_text)
         attribution_data = calculate_attribution(included_docs)
         trust_score = simple_trust_score(attribution_data)
+        
+        print(f"[generate_response] Analysis complete")
         
         return {
             "generated_text": generated_text,
@@ -266,26 +288,29 @@ async def generate_response(request: GenerateRequest):
             }
         }
         
-    except anthropic.APIConnectionError as e:
-        print(f"Anthropic connection error: {e}")
-        return {
-            "generated_text": "⚠️ Unable to connect to the AI service. Please check your internet connection and try again.",
-            "attributions": [],
-            "attributionData": {"baseKnowledge": 100, "documents": []},
-            "analysisData": {"sentiment": 0, "bias": {"political": 0, "gender": 0}, "trustScore": 0.5},
-            "error": f"Connection error: {str(e)}"
-        }
-    except anthropic.AuthenticationError as e:
-        print(f"Anthropic auth error: {e}")
-        return {
-            "generated_text": "⚠️ API authentication failed. The API key may be invalid or expired.",
-            "attributions": [],
-            "attributionData": {"baseKnowledge": 100, "documents": []},
-            "analysisData": {"sentiment": 0, "bias": {"political": 0, "gender": 0}, "trustScore": 0.5},
-            "error": f"Authentication error: {str(e)}"
-        }
     except Exception as e:
-        print(f"Anthropic API error: {e}")
+        # Try to handle anthropic-specific errors
+        if anthropic:
+            if isinstance(e, anthropic.APIConnectionError):
+                print(f"[generate_response] Anthropic connection error: {e}")
+                return {
+                    "generated_text": "⚠️ Unable to connect to the AI service. Please check your internet connection and try again.",
+                    "attributions": [],
+                    "attributionData": {"baseKnowledge": 100, "documents": []},
+                    "analysisData": {"sentiment": 0, "bias": {"political": 0, "gender": 0}, "trustScore": 0.5},
+                    "error": f"Connection error: {str(e)}"
+                }
+            elif isinstance(e, anthropic.AuthenticationError):
+                print(f"[generate_response] Anthropic auth error: {e}")
+                return {
+                    "generated_text": "⚠️ API authentication failed. The API key may be invalid or expired.",
+                    "attributions": [],
+                    "attributionData": {"baseKnowledge": 100, "documents": []},
+                    "analysisData": {"sentiment": 0, "bias": {"political": 0, "gender": 0}, "trustScore": 0.5},
+                    "error": f"Authentication error: {str(e)}"
+                }
+        
+        print(f"[generate_response] FATAL ERROR: {e}")
         import traceback
         traceback.print_exc()
         return {
