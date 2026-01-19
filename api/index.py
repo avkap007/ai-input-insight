@@ -116,42 +116,63 @@ def test_endpoint():
 @app.post("/extract-text")
 async def extract_text(file: UploadFile = File(...)):
     """Extract text from uploaded file (PDF or text)"""
+    print(f"[extract_text] Starting extraction for file: {file.filename}")
     try:
         content = ""
         filename = file.filename or "unnamed"
         
         # Read file contents into memory
+        print(f"[extract_text] Reading file contents...")
         file_contents = await file.read()
+        print(f"[extract_text] File size: {len(file_contents)} bytes")
         
         if filename.lower().endswith(".pdf"):
+            print(f"[extract_text] Processing as PDF...")
             # Lazy import pdfplumber only when needed
             import io
-            import pdfplumber
+            try:
+                import pdfplumber
+                print(f"[extract_text] pdfplumber imported successfully")
+            except ImportError as ie:
+                print(f"[extract_text] WARNING: pdfplumber not available: {ie}")
+                content = "[PDF extraction not available - returning raw content]"
+                raise
+            
             try:
                 # Use BytesIO to create a file-like object from bytes
                 pdf_file = io.BytesIO(file_contents)
+                print(f"[extract_text] Opening PDF with pdfplumber...")
                 with pdfplumber.open(pdf_file) as pdf:
+                    print(f"[extract_text] PDF has {len(pdf.pages)} pages")
                     content = "\n".join([
                         page.extract_text() or ""
                         for page in pdf.pages
                     ])
+                print(f"[extract_text] Successfully extracted {len(content)} characters from PDF")
             except Exception as pdf_error:
-                print(f"PDF extraction error: {pdf_error}")
+                print(f"[extract_text] PDF extraction error: {pdf_error}")
+                import traceback
+                traceback.print_exc()
                 content = f"[Error extracting PDF: {str(pdf_error)}]"
         else:
+            print(f"[extract_text] Processing as text file...")
             # For text files, decode the bytes
             try:
                 content = file_contents.decode("utf-8")
+                print(f"[extract_text] Successfully decoded as UTF-8: {len(content)} characters")
             except UnicodeDecodeError:
+                print(f"[extract_text] UTF-8 decode failed, trying latin-1...")
                 # Try different encoding if UTF-8 fails
                 try:
                     content = file_contents.decode("latin-1")
+                    print(f"[extract_text] Successfully decoded as latin-1: {len(content)} characters")
                 except Exception as enc_error:
-                    print(f"Text decoding error: {enc_error}")
+                    print(f"[extract_text] All decoding attempts failed: {enc_error}")
                     content = f"[Error decoding file: {str(enc_error)}]"
         
         # Generate a unique ID for this document
         doc_id = str(uuid.uuid4())
+        print(f"[extract_text] Returning document {doc_id}")
         
         return {
             "id": doc_id,
@@ -161,7 +182,7 @@ async def extract_text(file: UploadFile = File(...)):
             "influence_score": 0.5
         }
     except Exception as e:
-        print(f"Error extracting text: {e}")
+        print(f"[extract_text] FATAL ERROR: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to extract text: {str(e)}")
