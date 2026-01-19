@@ -3,10 +3,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import { Message } from '@/types';
 import { cn } from '@/lib/utils';
-import InfluenceVisualization from './InfluenceVisualization';
-import AttributionChart from './AttributionChart';
-import ResponseAnalysis from './ResponseAnalysis';
 import { useIsMobile } from '@/hooks/use-mobile';
+import ReactMarkdown from 'react-markdown';
 
 interface ChatInterfaceProps {
   messages: Message[];
@@ -84,17 +82,25 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   {message.role === 'user' ? (
                     <p>{message.content}</p>
                   ) : (
-                    <div className="space-y-4">
-                      <InfluenceVisualization 
-                        message={message.content} 
-                        attributions={message.attributions || []} 
-                      />
-                      {message.attributionData && (
-                        <AttributionChart data={message.attributionData} />
-                      )}
-                      {message.analysisData && (
-                        <ResponseAnalysis analysisData={message.analysisData} />
-                      )}
+                    <div className="prose prose-sm max-w-none">
+                      <ReactMarkdown
+                        components={{
+                          // Style markdown elements
+                          p: ({children}) => <p className="mb-3 last:mb-0">{children}</p>,
+                          strong: ({children}) => <strong className="font-semibold">{children}</strong>,
+                          em: ({children}) => <em className="italic">{children}</em>,
+                          ul: ({children}) => <ul className="list-disc pl-4 mb-3">{children}</ul>,
+                          ol: ({children}) => <ol className="list-decimal pl-4 mb-3">{children}</ol>,
+                          li: ({children}) => <li className="mb-1">{children}</li>,
+                          h1: ({children}) => <h1 className="text-xl font-bold mb-2">{children}</h1>,
+                          h2: ({children}) => <h2 className="text-lg font-bold mb-2">{children}</h2>,
+                          h3: ({children}) => <h3 className="text-base font-bold mb-2">{children}</h3>,
+                          code: ({children}) => <code className="bg-gray-200 px-1 rounded text-sm">{children}</code>,
+                          blockquote: ({children}) => <blockquote className="border-l-4 border-gray-300 pl-3 italic my-2">{children}</blockquote>,
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
                     </div>
                   )}
                 </div>
