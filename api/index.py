@@ -51,6 +51,15 @@ def test_anthropic():
         return jsonify({"success": False, "error": str(e)})
 
 
+@app.route('/api/test-post', methods=['POST', 'OPTIONS'])
+def test_post():
+    """Test if POST works"""
+    if request.method == 'OPTIONS':
+        return '', 200
+    data = request.get_json() or {}
+    return jsonify({"received": data, "success": True})
+
+
 @app.route('/api/extract-text', methods=['POST', 'OPTIONS'])
 def extract_text():
     if request.method == 'OPTIONS':
