@@ -1,2 +1,2 @@
-# Minimal requirements for testing
-# No external dependencies needed for basic handler
+# Only anthropic - no FastAPI/Mangum (they were causing Vercel issues)
+anthropic>=0.49.0
