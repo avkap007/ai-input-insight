@@ -167,12 +167,7 @@ async def extract_text(file: UploadFile = File(...)):
             try:
                 import pdfplumber
                 print(f"[extract_text] pdfplumber imported successfully")
-            except ImportError as ie:
-                print(f"[extract_text] WARNING: pdfplumber not available: {ie}")
-                content = "[PDF extraction not available - returning raw content]"
-                raise
-            
-            try:
+                
                 # Use BytesIO to create a file-like object from bytes
                 pdf_file = io.BytesIO(file_contents)
                 print(f"[extract_text] Opening PDF with pdfplumber...")
@@ -183,11 +178,17 @@ async def extract_text(file: UploadFile = File(...)):
                         for page in pdf.pages
                     ])
                 print(f"[extract_text] Successfully extracted {len(content)} characters from PDF")
+                
+            except ImportError as ie:
+                print(f"[extract_text] WARNING: pdfplumber import failed: {ie}")
+                print(f"[extract_text] Falling back to treating PDF as text")
+                content = f"[PDF not supported in this environment: {str(ie)}. Please try a text file.]"
+                
             except Exception as pdf_error:
                 print(f"[extract_text] PDF extraction error: {pdf_error}")
                 import traceback
                 traceback.print_exc()
-                content = f"[Error extracting PDF: {str(pdf_error)}]"
+                content = f"[Error extracting PDF: {str(pdf_error)}. Please try a text file.]"
         else:
             print(f"[extract_text] Processing as text file...")
             # For text files, decode the bytes
