@@ -1,51 +1,13 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Document } from "@/types";
 import { toast } from "@/components/ui/use-toast";
 import { documentClient } from "@/utils/apiClients";
 import { v4 as uuidv4 } from "uuid";
 
-const STORAGE_KEY = "ai-input-insight-documents";
-
-// Load documents from localStorage
-const loadFromStorage = (): Document[] => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch (error) {
-    console.error("Error loading from localStorage:", error);
-  }
-  return [];
-};
-
-// Save documents to localStorage
-const saveToStorage = (documents: Document[]) => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(documents));
-  } catch (error) {
-    console.error("Error saving to localStorage:", error);
-  }
-};
-
 export const useDocuments = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Load documents from localStorage on mount
-  useEffect(() => {
-    const stored = loadFromStorage();
-    setDocuments(stored);
-    setIsLoading(false);
-  }, []);
-
-  // Save to localStorage whenever documents change
-  useEffect(() => {
-    if (!isLoading) {
-      saveToStorage(documents);
-    }
-  }, [documents, isLoading]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Handle file upload - extract text via API, store locally
   const handleDocumentUpload = async (file: File) => {
@@ -147,7 +109,6 @@ export const useDocuments = () => {
   // Clear all documents
   const handleClearDocuments = () => {
     setDocuments([]);
-    localStorage.removeItem(STORAGE_KEY);
     toast({ title: "Documents cleared", description: "All documents have been removed." });
   };
 
