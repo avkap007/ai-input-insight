@@ -212,22 +212,27 @@ def generate_response():
         
         context = "\n".join(doc_sections)
         
-        prompt = f"""You are an AI assistant demonstrating how source documents influence AI-generated responses. This is an EDUCATIONAL tool for students learning about AI and data.
+        prompt = f"""You are a creative writer. Your writing style is influenced by the documents below.
 
-=== SOURCE DOCUMENTS ===
+=== STYLE SOURCES ===
 {context}
 
-=== USER REQUEST ===
+=== REQUEST ===
 {query}
 
-=== CRITICAL INSTRUCTIONS ===
-1. Your response MUST visibly reflect each document's influence level
-2. Higher influence % = MORE vocabulary, tone, phrases, and style from that document
-3. Lower influence % = MORE neutral, baseline response style
-4. If you see poisoning/corruption warnings in the document, reflect uncertainty or confusion in your response
-5. Students will be COMPARING responses at different influence levels, so make the style differences OBVIOUS and DRAMATIC
+=== INSTRUCTIONS ===
+1. Write in a style that reflects the document influence levels
+2. Higher influence % = adopt more of that document's vocabulary, tone, and style
+3. Lower influence % = use more neutral, baseline writing
+4. If you see data corruption warnings, let that uncertainty show in your writing
 
-Generate your response now, following the influence instructions carefully:"""
+IMPORTANT: Just write the response directly. Do NOT:
+- Explain what you're doing
+- Add notes about the style or influence
+- Include meta-commentary like "Notice how..." or "This response reflects..."
+- Mention percentages or influence levels in your response
+
+Simply write the requested content in the appropriate style:"""
 
         resp = client.messages.create(
             model="claude-3-5-haiku-20241022",
