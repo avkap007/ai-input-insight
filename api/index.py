@@ -183,7 +183,7 @@ class handler(BaseHTTPRequestHandler):
                     poisoning_level = doc.get('poisoning_level', 0)
                     
                     # Apply poisoning BEFORE including in prompt
-                    raw_content = doc.get('content', '')[:3000]
+                    raw_content = doc.get('content', '')[:1500]  # Reduced for faster processing
                     content = apply_poisoning(raw_content, poisoning_level)
                     
                     # Strong, explicit influence instructions
@@ -233,7 +233,7 @@ Make the style/tone changes OBVIOUS so they can see the difference."""
 
                 response = client.messages.create(
                     model="claude-sonnet-4-20250514",
-                    max_tokens=1024,
+                    max_tokens=512,  # Reduced for faster responses
                     messages=[{"role": "user", "content": prompt}]
                 )
                 
