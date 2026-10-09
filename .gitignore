@@ -19,6 +19,7 @@ build/
 # Local development
 .env
 .env.local
+api/.env
 *.db
 *.sqlite3
 
